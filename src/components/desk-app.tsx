@@ -78,7 +78,7 @@ function CustomerHome({
   const [phone, setPhone] = useState("");
   const [kind, setKind] = useState<"tandem" | "fun_jumper">("tandem");
   const [productId, setProductId] = useState<string>(PRODUCTS[0].id);
-  const [photo, setPhoto] = useState(false);
+  const [media, setMedia] = useState("none");
   const [date, setDate] = useState(todayChicago());
   const [deposit, setDeposit] = useState("100");
   const [card, setCard] = useState("");
@@ -144,7 +144,10 @@ function CustomerHome({
           {me.person.kind !== "fun_jumper" ? (
             <section className="card space-y-3 p-5">
               <h2 className="text-2xl">Hold a tandem with a deposit</h2>
-              <p className="text-sm text-muted">Stripe test mode. Use 4242 4242 4242 4242. Any future date, any CVC. No real charge.</p>
+              <p className="text-sm text-muted">
+                $100 holds the day and applies to the jump. If weather grounds you, it carries to the new date. Test card
+                4242 4242 4242 4242. Nothing is charged.
+              </p>
               <select className="field" value={productId} onChange={(e) => setProductId(e.target.value)}>
                 {PRODUCTS.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -152,10 +155,12 @@ function CustomerHome({
                   </option>
                 ))}
               </select>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={photo} onChange={(e) => setPhoto(e.target.checked)} />
-                Add photo and video ({money(11900)}) — included on beach and sunset
-              </label>
+              <select className="field" value={media} onChange={(e) => setMedia(e.target.value)}>
+                <option value="none">No media add-on</option>
+                <option value="video">Video only · {money(9900)}</option>
+                <option value="photo">Photo and video · {money(11900)}</option>
+              </select>
+              <p className="text-sm text-muted">Beach and sunset jumps already include photo and video.</p>
               <input className="field" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               <input className="field" inputMode="decimal" value={deposit} onChange={(e) => setDeposit(e.target.value)} />
               <input className="field" placeholder="4242 4242 4242 4242" value={card} onChange={(e) => setCard(e.target.value)} />
@@ -167,7 +172,8 @@ function CustomerHome({
                     bookSelf({
                       data: {
                         productId,
-                        photo,
+                        photo: media === "photo",
+                        videoOnly: media === "video",
                         date,
                         depositCents: Math.round(Number(deposit) * 100),
                         card,
@@ -464,7 +470,7 @@ function BookingsPanel({
 }) {
   const [personId, setPersonId] = useState("");
   const [productId, setProductId] = useState<string>(PRODUCTS[0].id);
-  const [photo, setPhoto] = useState(false);
+  const [media, setMedia] = useState("none");
   const [deposit, setDeposit] = useState("100");
   const [method, setMethod] = useState("stripe_test");
   const [card, setCard] = useState("");
@@ -482,7 +488,8 @@ function BookingsPanel({
               data: {
                 personId: Number(personId),
                 productId,
-                photo,
+                photo: media === "photo",
+                videoOnly: media === "video",
                 date,
                 depositCents: Math.round(Number(deposit || 0) * 100),
                 method,
@@ -516,10 +523,11 @@ function BookingsPanel({
             <option value="card_present">Card at the desk</option>
           </select>
         </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={photo} onChange={(e) => setPhoto(e.target.checked)} />
-          Photo and video
-        </label>
+        <select className="field" value={media} onChange={(e) => setMedia(e.target.value)}>
+          <option value="none">No media add-on</option>
+          <option value="video">Video only · {money(9900)}</option>
+          <option value="photo">Photo and video · {money(11900)}</option>
+        </select>
         {method === "stripe_test" ? (
           <input className="field" placeholder="4242 4242 4242 4242" value={card} onChange={(e) => setCard(e.target.value)} />
         ) : null}

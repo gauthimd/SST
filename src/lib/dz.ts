@@ -391,6 +391,7 @@ type NewBooking = {
   personId: number;
   productId: string;
   photo: boolean;
+  videoOnly?: boolean;
   date: string;
   depositCents: number;
   method: string;
@@ -403,6 +404,7 @@ export const createBooking = createServerFn({ method: "POST" })
     personId: n(input.personId),
     productId: input.productId,
     photo: Boolean(input.photo),
+    videoOnly: Boolean(input.videoOnly) && !input.photo,
     date: cleanDate(input.date),
     depositCents: Math.max(0, Math.round(n(input.depositCents))),
     method: input.method === "cash" || input.method === "card_present" ? input.method : "stripe_test",
@@ -410,7 +412,7 @@ export const createBooking = createServerFn({ method: "POST" })
   }))
   .handler(async ({ context, data }) => {
     await requireStaff(context.userId);
-    const priced = quote(data.productId, data.photo);
+    const priced = quote(data.productId, data.photo, data.videoOnly);
     if (data.depositCents > priced.total) throw new Error("Deposit is larger than the jump");
     if (data.depositCents > 0 && data.method === "stripe_test") assertTestCard(data.card);
     const sql = await getSql();
@@ -555,16 +557,17 @@ export const openMyAccount = createServerFn({ method: "POST" })
 
 export const bookSelf = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((input: { productId: string; photo: boolean; date: string; depositCents: number; card: string }) => ({
+  .validator((input: { productId: string; photo: boolean; videoOnly?: boolean; date: string; depositCents: number; card: string }) => ({
     productId: input.productId,
     photo: Boolean(input.photo),
+    videoOnly: Boolean(input.videoOnly) && !input.photo,
     date: cleanDate(input.date),
     depositCents: Math.round(n(input.depositCents)),
     card: input.card ?? "",
   }))
   .handler(async ({ context, data }) => {
-    const priced = quote(data.productId, data.photo);
-    if (data.depositCents < 5000) throw new Error("A $50 deposit holds the slot");
+    const priced = quote(data.productId, data.photo, data.videoOnly);
+    if (data.depositCents < 10000) throw new Error("A $100 deposit holds the slot. It applies to the jump.");
     if (data.depositCents > priced.total) throw new Error("Deposit is larger than the jump");
     assertTestCard(data.card);
     const sql = await getSql();

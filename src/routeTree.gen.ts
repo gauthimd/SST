@@ -10,8 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BookRouteImport } from './routes/book'
 import { Route as DeskRouteImport } from './routes/desk'
+import { Route as FaqRouteImport } from './routes/faq'
+import { Route as GiftCardsRouteImport } from './routes/gift-cards'
+import { Route as GroupsRouteImport } from './routes/groups'
+import { Route as JumperInfoRouteImport } from './routes/jumper-info'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MerchRouteImport } from './routes/merch'
+import { Route as PhotosRouteImport } from './routes/photos'
+import { Route as ScenicFlightsRouteImport } from './routes/scenic-flights'
+import { Route as TestimonialsRouteImport } from './routes/testimonials'
+import { Route as ApiInquiryRouteImport } from './routes/api/inquiry'
+import { Route as GuidesIndexRouteImport } from './routes/guides/index'
+import { Route as GuidesSlugRouteImport } from './routes/guides/$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -19,14 +31,74 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BookRoute = BookRouteImport.update({
+  id: '/book',
+  path: '/book',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DeskRoute = DeskRouteImport.update({
   id: '/desk',
   path: '/desk',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GiftCardsRoute = GiftCardsRouteImport.update({
+  id: '/gift-cards',
+  path: '/gift-cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupsRoute = GroupsRouteImport.update({
+  id: '/groups',
+  path: '/groups',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JumperInfoRoute = JumperInfoRouteImport.update({
+  id: '/jumper-info',
+  path: '/jumper-info',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MerchRoute = MerchRouteImport.update({
+  id: '/merch',
+  path: '/merch',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PhotosRoute = PhotosRouteImport.update({
+  id: '/photos',
+  path: '/photos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScenicFlightsRoute = ScenicFlightsRouteImport.update({
+  id: '/scenic-flights',
+  path: '/scenic-flights',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestimonialsRoute = TestimonialsRouteImport.update({
+  id: '/testimonials',
+  path: '/testimonials',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInquiryRoute = ApiInquiryRouteImport.update({
+  id: '/api/inquiry',
+  path: '/api/inquiry',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesIndexRoute = GuidesIndexRouteImport.update({
+  id: '/guides/',
+  path: '/guides/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesSlugRoute = GuidesSlugRouteImport.update({
+  id: '/guides/$slug',
+  path: '/guides/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -37,35 +109,132 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/book': typeof BookRoute
   '/desk': typeof DeskRoute
+  '/faq': typeof FaqRoute
+  '/gift-cards': typeof GiftCardsRoute
+  '/groups': typeof GroupsRoute
+  '/jumper-info': typeof JumperInfoRoute
   '/login': typeof LoginRoute
+  '/merch': typeof MerchRoute
+  '/photos': typeof PhotosRoute
+  '/scenic-flights': typeof ScenicFlightsRoute
+  '/testimonials': typeof TestimonialsRoute
+  '/api/inquiry': typeof ApiInquiryRoute
+  '/guides/$slug': typeof GuidesSlugRoute
+  '/guides/': typeof GuidesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/book': typeof BookRoute
   '/desk': typeof DeskRoute
+  '/faq': typeof FaqRoute
+  '/gift-cards': typeof GiftCardsRoute
+  '/groups': typeof GroupsRoute
+  '/jumper-info': typeof JumperInfoRoute
   '/login': typeof LoginRoute
+  '/merch': typeof MerchRoute
+  '/photos': typeof PhotosRoute
+  '/scenic-flights': typeof ScenicFlightsRoute
+  '/testimonials': typeof TestimonialsRoute
+  '/api/inquiry': typeof ApiInquiryRoute
+  '/guides/$slug': typeof GuidesSlugRoute
+  '/guides': typeof GuidesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/book': typeof BookRoute
   '/desk': typeof DeskRoute
+  '/faq': typeof FaqRoute
+  '/gift-cards': typeof GiftCardsRoute
+  '/groups': typeof GroupsRoute
+  '/jumper-info': typeof JumperInfoRoute
   '/login': typeof LoginRoute
+  '/merch': typeof MerchRoute
+  '/photos': typeof PhotosRoute
+  '/scenic-flights': typeof ScenicFlightsRoute
+  '/testimonials': typeof TestimonialsRoute
+  '/api/inquiry': typeof ApiInquiryRoute
+  '/guides/$slug': typeof GuidesSlugRoute
+  '/guides/': typeof GuidesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/desk' | '/login' | '/api/auth/$'
+  fullPaths:
+    | '/'
+    | '/book'
+    | '/desk'
+    | '/faq'
+    | '/gift-cards'
+    | '/groups'
+    | '/jumper-info'
+    | '/login'
+    | '/merch'
+    | '/photos'
+    | '/scenic-flights'
+    | '/testimonials'
+    | '/api/inquiry'
+    | '/guides/$slug'
+    | '/guides/'
+    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/desk' | '/login' | '/api/auth/$'
-  id: '__root__' | '/' | '/desk' | '/login' | '/api/auth/$'
+  to:
+    | '/'
+    | '/book'
+    | '/desk'
+    | '/faq'
+    | '/gift-cards'
+    | '/groups'
+    | '/jumper-info'
+    | '/login'
+    | '/merch'
+    | '/photos'
+    | '/scenic-flights'
+    | '/testimonials'
+    | '/api/inquiry'
+    | '/guides/$slug'
+    | '/guides'
+    | '/api/auth/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/book'
+    | '/desk'
+    | '/faq'
+    | '/gift-cards'
+    | '/groups'
+    | '/jumper-info'
+    | '/login'
+    | '/merch'
+    | '/photos'
+    | '/scenic-flights'
+    | '/testimonials'
+    | '/api/inquiry'
+    | '/guides/$slug'
+    | '/guides/'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BookRoute: typeof BookRoute
   DeskRoute: typeof DeskRoute
+  FaqRoute: typeof FaqRoute
+  GiftCardsRoute: typeof GiftCardsRoute
+  GroupsRoute: typeof GroupsRoute
+  JumperInfoRoute: typeof JumperInfoRoute
   LoginRoute: typeof LoginRoute
+  MerchRoute: typeof MerchRoute
+  PhotosRoute: typeof PhotosRoute
+  ScenicFlightsRoute: typeof ScenicFlightsRoute
+  TestimonialsRoute: typeof TestimonialsRoute
+  ApiInquiryRoute: typeof ApiInquiryRoute
+  GuidesSlugRoute: typeof GuidesSlugRoute
+  GuidesIndexRoute: typeof GuidesIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -78,6 +247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/book': {
+      id: '/book'
+      path: '/book'
+      fullPath: '/book'
+      preLoaderRoute: typeof BookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/desk': {
       id: '/desk'
       path: '/desk'
@@ -85,11 +261,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DeskRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gift-cards': {
+      id: '/gift-cards'
+      path: '/gift-cards'
+      fullPath: '/gift-cards'
+      preLoaderRoute: typeof GiftCardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/groups': {
+      id: '/groups'
+      path: '/groups'
+      fullPath: '/groups'
+      preLoaderRoute: typeof GroupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jumper-info': {
+      id: '/jumper-info'
+      path: '/jumper-info'
+      fullPath: '/jumper-info'
+      preLoaderRoute: typeof JumperInfoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merch': {
+      id: '/merch'
+      path: '/merch'
+      fullPath: '/merch'
+      preLoaderRoute: typeof MerchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/photos': {
+      id: '/photos'
+      path: '/photos'
+      fullPath: '/photos'
+      preLoaderRoute: typeof PhotosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scenic-flights': {
+      id: '/scenic-flights'
+      path: '/scenic-flights'
+      fullPath: '/scenic-flights'
+      preLoaderRoute: typeof ScenicFlightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/testimonials': {
+      id: '/testimonials'
+      path: '/testimonials'
+      fullPath: '/testimonials'
+      preLoaderRoute: typeof TestimonialsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/inquiry': {
+      id: '/api/inquiry'
+      path: '/api/inquiry'
+      fullPath: '/api/inquiry'
+      preLoaderRoute: typeof ApiInquiryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/': {
+      id: '/guides/'
+      path: '/guides'
+      fullPath: '/guides/'
+      preLoaderRoute: typeof GuidesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/$slug': {
+      id: '/guides/$slug'
+      path: '/guides/$slug'
+      fullPath: '/guides/$slug'
+      preLoaderRoute: typeof GuidesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -104,8 +357,20 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BookRoute: BookRoute,
   DeskRoute: DeskRoute,
+  FaqRoute: FaqRoute,
+  GiftCardsRoute: GiftCardsRoute,
+  GroupsRoute: GroupsRoute,
+  JumperInfoRoute: JumperInfoRoute,
   LoginRoute: LoginRoute,
+  MerchRoute: MerchRoute,
+  PhotosRoute: PhotosRoute,
+  ScenicFlightsRoute: ScenicFlightsRoute,
+  TestimonialsRoute: TestimonialsRoute,
+  ApiInquiryRoute: ApiInquiryRoute,
+  GuidesSlugRoute: GuidesSlugRoute,
+  GuidesIndexRoute: GuidesIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
