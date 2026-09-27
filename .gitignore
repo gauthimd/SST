@@ -1,0 +1,14 @@
+node_modules
+dist
+.output
+.vinxi
+.vercel
+screenshots
+*.log
+.DS_Store
+.project_id
+.node_modules.lock
+.grok/preview.log
+.grok/preview.pid
+.grok/status
+.grok/og-pending

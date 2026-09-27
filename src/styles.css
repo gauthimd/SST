@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --color-ink: #10222b;
+  --color-sea: #0e4d5c;
+  --color-deep: #08343d;
+  --color-foam: #f4efe6;
+  --color-sand: #e6d3b4;
+  --color-coral: #c4523a;
+  --color-muted: #5c6b72;
+  --color-line: #d9cdb8;
+  --color-card: #fffdf8;
+  --radius-card: 1rem;
+}
+
+@layer base {
+  html { color: var(--color-ink); background: var(--color-foam); }
+  body { font-family: var(--font-sans); min-height: 100%; }
+  button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 560; letter-spacing: -0.02em; }
+}
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border-radius: 0.7rem;
+    background: var(--color-coral);
+    padding: 0.5rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 560;
+    color: var(--color-foam);
+  }
+  .btn:disabled { opacity: 0.55; }
+  .btn-sea { background: var(--color-sea); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-ink);
+    border: 1px solid var(--color-line);
+  }
+  .btn-deep { background: var(--color-deep); }
+  .field {
+    width: 100%;
+    min-height: 2.75rem;
+    border-radius: 0.7rem;
+    border: 1px solid var(--color-line);
+    background: var(--color-card);
+    padding: 0.55rem 0.75rem;
+    color: var(--color-ink);
+  }
+  .kicker {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-sand);
+  }
+  .card {
+    background: var(--color-card);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; transition: none !important; }
+}
