@@ -636,6 +636,9 @@ export const addSlot = createServerFn({ method: "POST" })
       select person_id, role, instructor_id from slots where load_id = ${data.loadId}
     `;
     if (seated.some((slot) => n(slot.person_id) === data.personId)) throw new Error(`${person.name} is already on this load`);
+    if (data.role === "fun_jumper" && seated.some((slot) => n(slot.instructor_id) === data.personId)) {
+      throw new Error(`${person.name} is already the instructor on this load`);
+    }
     const elsewhere = await sql<{ id: unknown }>`
       select l.id
       from slots s
@@ -682,7 +685,11 @@ export const addSlot = createServerFn({ method: "POST" })
       if (seated.some((slot) => slot.role === "tandem" && n(slot.instructor_id) === data.instructorId)) {
         throw new Error(`${instructor.name} already has a student on this load`);
       }
-      const instructorOnLoad = seated.some((slot) => n(slot.person_id) === data.instructorId);
+      const instructorSeat = seated.find((slot) => n(slot.person_id) === data.instructorId);
+      if (instructorSeat && s(instructorSeat.role) !== "instructor") {
+        throw new Error(`${instructor.name} is already on this load as a fun jumper`);
+      }
+      const instructorOnLoad = Boolean(instructorSeat);
       if (!instructorOnLoad) {
         const instructorElsewhere = await sql<{ id: unknown }>`
           select l.id

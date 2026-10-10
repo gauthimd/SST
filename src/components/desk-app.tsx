@@ -499,8 +499,12 @@ function LoadCard({
       .filter((item) => item.id !== load.id && item.status !== "landed")
       .flatMap((item) => item.slots.map((slot) => slot.personId)),
   );
+  const teachingThisLoad = new Set(
+    load.slots.flatMap((slot) => [slot.role === "instructor" ? slot.personId : 0, slot.instructorId]).filter((id) => id > 0),
+  );
+  const funJumpingThisLoad = new Set(load.slots.filter((slot) => slot.role === "fun_jumper").map((slot) => slot.personId));
   const tandemInstructors = instructors.filter((person) => {
-    if (pairedInstructorIds.has(person.id) || onAnotherLoad.has(person.id)) return false;
+    if (pairedInstructorIds.has(person.id) || onAnotherLoad.has(person.id) || funJumpingThisLoad.has(person.id)) return false;
     if (onThisLoad.has(person.id) && !instructorIdsOnLoad.has(person.id)) return false;
     if (instructorIdsOnLoad.has(person.id)) return true;
     return newPairFits;
@@ -511,9 +515,12 @@ function LoadCard({
     canFinish(afterAdd(counts, "instructor")) ? "instructor" : "",
   ].filter(Boolean);
   const seatRole = roleChoices.includes(role) ? role : roleChoices[0] ?? "fun_jumper";
-  const choices = (seatRole === "tandem" ? tandems : seatRole === "instructor" ? instructors : funJumpers).filter(
-    (person) => !onThisLoad.has(person.id) && !onAnotherLoad.has(person.id),
-  );
+  const choices = (seatRole === "tandem" ? tandems : seatRole === "instructor" ? instructors : funJumpers).filter((person) => {
+    if (onThisLoad.has(person.id) || onAnotherLoad.has(person.id)) return false;
+    if (seatRole === "fun_jumper" && teachingThisLoad.has(person.id)) return false;
+    if (seatRole === "instructor" && funJumpingThisLoad.has(person.id)) return false;
+    return true;
+  });
 
   return (
     <article className="card p-4">
