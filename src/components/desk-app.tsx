@@ -567,10 +567,7 @@ function LoadCard({
         ))}
         {load.slots.length === 0 ? <li className="text-muted">Empty load</li> : null}
       </ul>
-      <p className="mt-2 text-sm text-muted">
-        {used} of 4 seats. The pilot is extra. A full load is two tandem pairs, one tandem pair plus two fun jumpers, or
-        four fun jumpers.
-      </p>
+      <p className="mt-2 text-sm text-muted">{used} out of 4 seats</p>
       {full ? (
         <p className="mt-3 text-sm">This load is full.</p>
       ) : (
