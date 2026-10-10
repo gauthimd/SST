@@ -20,7 +20,7 @@
  * `process.env`, which is why the merge has to happen before Vite starts.
  */
 import { spawn } from "node:child_process";
-import { readFileSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { constants as osConstants } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -111,7 +111,7 @@ function main(argv) {
     process.exit(2);
   }
   const env = mergeAppEnv(readAppEnv(projectRoot()), process.env);
-  const child = spawn(command, args, { stdio: "inherit", env });
+  const child = spawnDevCommand(command, args, env);
   // The dev server is long-running and is stopped by signalling this wrapper.
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
     process.on(signal, () => child.kill(signal));
@@ -123,6 +123,30 @@ function main(argv) {
   child.on("exit", (code, signal) => {
     process.exit(exitStatusFromChild(code, signal));
   });
+}
+
+/**
+ * Launch `command` with the merged env.
+ *
+ * On Windows, `spawn("vite")` looks for `vite.exe` and misses npm's
+ * `vite.cmd` shim, which surfaces as `spawn vite ENOENT` even after a
+ * successful install. Run the package's JS entry with this Node instead.
+ * If that entry is missing, fall through to a shell so a half-finished
+ * install reports "not recognized" instead of the same ENOENT.
+ */
+function spawnDevCommand(command, args, env) {
+  if (process.platform === "win32") {
+    const jsBin = join(projectRoot(), "node_modules", command, "bin", `${command}.js`);
+    if (existsSync(jsBin)) {
+      return spawn(process.execPath, [jsBin, ...args], {
+        stdio: "inherit",
+        env,
+        windowsHide: true,
+      });
+    }
+    return spawn(command, args, { stdio: "inherit", env, shell: true, windowsHide: true });
+  }
+  return spawn(command, args, { stdio: "inherit", env });
 }
 
 if (isMainModule(import.meta.url)) {
