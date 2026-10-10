@@ -212,7 +212,7 @@ export function HangarClock({ date }: { date: string }) {
 
           <div className="flex min-h-0 flex-col">
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-3 text-center">
-              <p className="font-['Courier_New',monospace] text-5xl text-[#00ccff] xl:text-6xl">{clock}</p>
+              <p className="font-['Courier_New',monospace] text-7xl text-[#00ccff] xl:text-8xl">{clock}</p>
               <p className="mt-4 text-4xl font-bold text-[#cccccc]">{current ? `Load ${current.loadNumber} Call` : "Load Call"}</p>
               {timerOn ? (
                 <p className="mt-2 font-['Courier_New',monospace] text-[9rem] leading-none font-bold tabular-nums xl:text-[11rem]" style={{ color: timeColor }}>
