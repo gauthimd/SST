@@ -18,6 +18,14 @@ import { dirname, join } from "node:path";
 import pg from "pg";
 import { pendingMigrations } from "./migration-plan.mjs";
 
+/** Supabase's pooler cert is not in Node's trust store. `sslmode=require` now means verify-full, which fails the build with SELF_SIGNED_CERT_IN_CHAIN. Keep full verification for every other host. */
+export function postgresConnectionString(url) {
+  if (!/supabase\.(co|com)/.test(url) || url.includes("uselibpqcompat=")) return url;
+  const join = url.includes("?") ? "&" : "?";
+  const mode = /[?&]sslmode=/.test(url) ? "" : "sslmode=require&";
+  return `${url}${join}${mode}uselibpqcompat=true`;
+}
+
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   console.log(
@@ -42,7 +50,7 @@ async function main() {
     return;
   }
 
-  const pool = new pg.Pool({ connectionString: databaseUrl, max: 1 });
+  const pool = new pg.Pool({ connectionString: postgresConnectionString(databaseUrl), max: 1 });
   const client = await pool.connect();
   try {
     await client.query(

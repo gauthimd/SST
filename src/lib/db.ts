@@ -19,6 +19,18 @@ const databaseUrl =
 export const dbSource: DbSource = databaseUrl ? "neon" : "pglite";
 
 /**
+ * Supabase's pooler certificate is not in Node's trust store. Current `pg`
+ * treats `sslmode=require` as verify-full, so the deploy migration dies with
+ * SELF_SIGNED_CERT_IN_CHAIN. Relax verification only for Supabase hosts.
+ */
+export function postgresConnectionString(url: string): string {
+  if (!/supabase\.(co|com)/.test(url) || url.includes("uselibpqcompat=")) return url;
+  const join = url.includes("?") ? "&" : "?";
+  const mode = /[?&]sslmode=/.test(url) ? "" : "sslmode=require&";
+  return `${url}${join}${mode}uselibpqcompat=true`;
+}
+
+/**
  * Minimal shared SQL surface, satisfied by both Neon and PGLite. Both the
  * tagged-template and `.query()` forms resolve to an array of row objects:
  *
@@ -93,7 +105,7 @@ function createNeonSql(): Promise<Sql> {
     types.setTypeParser(OID_INT8, Number);
     types.setTypeParser(OID_DATE, identity);
     types.setTypeParser(OID_INTERVAL, identity);
-    const pool = new Pool({ connectionString: databaseUrl });
+    const pool = new Pool({ connectionString: postgresConnectionString(databaseUrl as string) });
     return toSql(async <T>(text: string, params: unknown[]) => {
       const res = await pool.query(text, params);
       return res.rows as T[];
