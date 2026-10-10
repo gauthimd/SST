@@ -298,27 +298,27 @@ function LoadCard({ load }: { load: Load | null }) {
   return (
     <article className="min-h-0 flex-1 overflow-auto rounded-sm border-2 border-[#00ccff] bg-[#001a4d] px-3 py-2">
       {!load ? (
-        <p className="py-4 text-center text-sm text-[#cccccc]">— no load —</p>
+        <p className="py-4 text-center text-xl text-[#cccccc]">— no load —</p>
       ) : (
         <>
-          <div className="flex flex-wrap items-baseline gap-x-3">
-            <p className="text-base font-bold text-[#00ff88]">Load {load.loadNumber}</p>
+          <div className="flex flex-wrap items-baseline gap-x-3 text-xl">
+            <p className="text-2xl font-bold text-[#00ff88]">Load {load.loadNumber}</p>
             <p>Depart {load.callTime || "—"}</p>
             {load.tailNumber ? <p className="text-[#00ccff]">Tail: {load.tailNumber}</p> : null}
             {load.altitudeFt ? <p className="text-[#cccccc]">{load.altitudeFt.toLocaleString()} ft</p> : null}
           </div>
-          <div className="mt-1 grid grid-cols-[1.4fr_0.6fr_0.35fr_1fr] text-[11px] font-bold text-[#88aacc]">
+          <div className={`mt-2 grid ${LOAD_COLS} text-base font-bold text-[#88aacc]`}>
             <span>Skydiver</span>
             <span>TI</span>
-            <span>Vid</span>
+            <span>Photos/Video</span>
             <span>Notes</span>
           </div>
           <div className="my-1 h-px bg-[#004488]" />
           {rows.length === 0 ? (
-            <p className="text-sm text-[#cccccc]">(no jumpers listed)</p>
+            <p className="text-lg text-[#cccccc]">(no jumpers listed)</p>
           ) : (
             rows.map((row, i) => (
-              <div key={`${row.name}-${i}`} className="grid grid-cols-[1.4fr_0.6fr_0.35fr_1fr] text-sm leading-5">
+              <div key={`${row.name}-${i}`} className={`grid ${LOAD_COLS} text-xl leading-8`}>
                 <span className="truncate">{row.name}</span>
                 <span className="truncate text-[#cccccc]">{row.ti}</span>
                 <span className="text-[#cccccc]">{row.video}</span>
@@ -394,17 +394,24 @@ function jumperRows(load: Load): JumperRow[] {
   return load.slots.flatMap((slot) => {
     if (slot.role === "tandem") {
       const notes = slot.jumpType === "beach" ? "Beach" : slot.jumpType === "sunset" ? "Sunset" : "";
-      const video = slot.media === "video" || slot.media === "photo" ? "Y" : "";
-      return [{ name: slot.personName, ti: firstName(slot.instructorName), video, notes }];
+      return [{ name: displayName(slot.personName), ti: displayName(slot.instructorName), video: mediaMark(slot.media), notes }];
     }
-    if (slot.role === "fun_jumper") return [{ name: slot.personName, ti: "", video: "", notes: "FJ" }];
+    if (slot.role === "fun_jumper") return [{ name: displayName(slot.personName), ti: "", video: "N", notes: "FJ" }];
     return [];
   });
 }
 
-function firstName(name: string) {
-  return name.trim().split(/\s+/)[0] ?? "";
+function displayName(name: string) {
+  return name.replace(/^Practice\s*·\s*/, "").trim();
 }
+
+function mediaMark(media: string) {
+  if (media === "photo") return "P/V";
+  if (media === "video") return "V";
+  return "N";
+}
+
+const LOAD_COLS = "grid-cols-[minmax(0,1.4fr)_minmax(0,1.1fr)_minmax(0,0.9fr)_minmax(0,0.6fr)]";
 
 function byCall(a: Load, b: Load) {
   const at = a.callTime || "99:99";
