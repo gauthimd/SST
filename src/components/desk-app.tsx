@@ -666,11 +666,11 @@ function optionLabel(person: Person, desk: Desk) {
 
 function available(desk: Desk, kind: string, date: string) {
   return desk.people.filter((p) => {
-    if (!desk.checkedInIds.includes(p.id)) return false;
-    if (kind === "fun_jumper") {
-      if (p.kind !== "fun_jumper" && p.kind !== "instructor") return false;
-      return !jumpBlocker(p, date, "fun_jumper");
+    if (kind === "fun_jumper" && p.kind === "instructor") {
+      return desk.funJumpIds.includes(p.id) && !jumpBlocker(p, date, "fun_jumper");
     }
+    if (!desk.checkedInIds.includes(p.id)) return false;
+    if (kind === "fun_jumper") return p.kind === "fun_jumper" && !jumpBlocker(p, date, "fun_jumper");
     return p.kind === kind && !jumpBlocker(p, date, kind);
   });
 }
@@ -1311,21 +1311,38 @@ function CheckinPanel({
               .filter((p) => p.kind === kind)
               .map((p) => {
                 const on = desk.checkedInIds.includes(p.id);
+                const fun = desk.funJumpIds.includes(p.id);
                 const block = jumpBlocker(p, date);
+                const funBlock = kind === "instructor" ? jumpBlocker(p, date, "fun_jumper") : "";
                 return (
                   <li key={p.id} className="flex items-center justify-between gap-2">
                     <span className="text-sm">
                       {p.name}
                       {block ? <span className="block text-coral">{block}</span> : null}
+                      {kind === "instructor" && funBlock && funBlock !== block ? (
+                        <span className="block text-coral">{funBlock}</span>
+                      ) : null}
                     </span>
-                    <button
-                      type="button"
-                      className={on ? "btn" : "btn btn-ghost"}
-                      disabled={busy}
-                      onClick={() => run(() => toggleCheckin({ data: { personId: p.id, date, on: !on } }))}
-                    >
-                      {on ? "In" : "Out"}
-                    </button>
+                    <span className="flex shrink-0 gap-1">
+                      <button
+                        type="button"
+                        className={on ? "btn" : "btn btn-ghost"}
+                        disabled={busy}
+                        onClick={() => run(() => toggleCheckin({ data: { personId: p.id, date, on: !on } }))}
+                      >
+                        {on ? "In" : "Out"}
+                      </button>
+                      {kind === "instructor" ? (
+                        <button
+                          type="button"
+                          className={fun ? "btn" : "btn btn-ghost"}
+                          disabled={busy || (!fun && Boolean(funBlock))}
+                          onClick={() => run(() => toggleCheckin({ data: { personId: p.id, date, on: !fun, funJump: true } }))}
+                        >
+                          {fun ? "Fun in" : "Fun jump"}
+                        </button>
+                      ) : null}
+                    </span>
                   </li>
                 );
               })}

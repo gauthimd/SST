@@ -99,6 +99,7 @@ export type Desk = {
   bookings: Booking[];
   people: Person[];
   checkedInIds: number[];
+  funJumpIds: number[];
   audit: Audit[];
   staffRequests: StaffRequest[];
 };
@@ -482,10 +483,11 @@ export const loadDesk = createServerFn({ method: "GET" })
       )
     ).map(mapBooking);
     const people = await peopleQuery("");
-    const checked = await sql.query<{ person_id: unknown }>(
-      `select person_id from checkins where jump_date = $1`,
+    const checked = await sql.query<{ person_id: unknown; instructor_in: unknown; fun_jump: unknown }>(
+      `select person_id, instructor_in, fun_jump from checkins where jump_date = $1`,
       [date],
     );
+    const isOn = (value: unknown) => value === true || value === "t" || value === "true";
     const auditRows = isAdmin(role)
       ? await sql<{
           id: unknown;
@@ -501,7 +503,8 @@ export const loadDesk = createServerFn({ method: "GET" })
       loads,
       bookings,
       people,
-      checkedInIds: checked.map((row) => n(row.person_id)),
+      checkedInIds: checked.filter((row) => isOn(row.instructor_in)).map((row) => n(row.person_id)),
+      funJumpIds: checked.filter((row) => isOn(row.fun_jump)).map((row) => n(row.person_id)),
       audit: auditRows.map((row) => ({
         id: n(row.id),
         action: s(row.action),
@@ -648,12 +651,18 @@ export const addSlot = createServerFn({ method: "POST" })
       throw new Error("Video rides with the tandem instructor. It is not another seat.");
     }
     const counts = seatCounts(seated.map((slot) => ({ role: s(slot.role) })));
-    const checked = await sql.query<{ person_id: unknown }>(
-      `select person_id from checkins where person_id = $1 and jump_date = $2`,
+    const checked = await sql.query<{ fun_jump: unknown; instructor_in: unknown }>(
+      `select fun_jump, instructor_in from checkins where person_id = $1 and jump_date = $2`,
       [data.personId, jumpDate],
     );
-    if ((data.role === "fun_jumper" || data.role === "instructor") && !checked[0]) {
+    const checkedOn = (value: unknown) => value === true || value === "t" || value === "true";
+    if (data.role === "fun_jumper" && person.kind === "instructor") {
+      if (!checked[0] || !checkedOn(checked[0].fun_jump)) throw new Error("Check them in as a fun jumper first");
+    } else if ((data.role === "fun_jumper" || data.role === "instructor") && !checked[0]) {
       throw new Error("Check them in for this day first");
+    }
+    if (data.role === "instructor" && !checkedOn(checked[0]?.instructor_in)) {
+      throw new Error("Check them in as an instructor first");
     }
     let instructorId: number | null = null;
     if (data.role === "tandem") {
@@ -663,7 +672,7 @@ export const addSlot = createServerFn({ method: "POST" })
       const instructor = instructors[0];
       if (!instructor || instructor.kind !== "instructor") throw new Error("That instructor is not on the list");
       const instructorIn = await sql.query(
-        `select person_id from checkins where person_id = $1 and jump_date = $2`,
+        `select person_id from checkins where person_id = $1 and jump_date = $2 and instructor_in`,
         [data.instructorId, jumpDate],
       );
       if (!instructorIn[0]) throw new Error("That instructor is not checked in");
@@ -1079,15 +1088,45 @@ export const updatePerson = createServerFn({ method: "POST" })
 
 export const toggleCheckin = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((input: { personId: number; date: string; on: boolean }) => ({
+  .validator((input: { personId: number; date: string; on: boolean; funJump?: boolean }) => ({
     personId: n(input.personId),
     date: cleanDate(input.date),
     on: Boolean(input.on),
+    funJump: Boolean(input.funJump),
   }))
   .handler(async ({ context, data }) => {
     await requireStaff(context.userId);
     const sql = await getSql();
-    if (data.on) {
+    const people = await peopleQuery("where p.id = $1", data.personId);
+    const person = people[0];
+    if (!person) throw new Error("Person not found");
+    if (data.funJump) {
+      if (person.kind !== "instructor") throw new Error("Only a tandem instructor can check in as a fun jumper");
+      if (data.on) {
+        const block = jumpBlocker(person, data.date, "fun_jumper");
+        if (block) throw new Error(block);
+        await sql`insert into checkins (person_id, jump_date, created_by, instructor_in, fun_jump)
+          values (${data.personId}, ${data.date}, ${context.userId}, false, true)
+          on conflict (person_id, jump_date) do update set fun_jump = true`;
+      } else {
+        await sql`update checkins set fun_jump = false where person_id = ${data.personId} and jump_date = ${data.date}`;
+        await sql`delete from checkins
+          where person_id = ${data.personId} and jump_date = ${data.date} and instructor_in = false and fun_jump = false`;
+      }
+      await audit(context.userId, data.on ? "check_in_fun_jump" : "check_out_fun_jump", "person", String(data.personId), data.date);
+      return { ok: true };
+    }
+    if (person.kind === "instructor") {
+      if (data.on) {
+        await sql`insert into checkins (person_id, jump_date, created_by, instructor_in)
+          values (${data.personId}, ${data.date}, ${context.userId}, true)
+          on conflict (person_id, jump_date) do update set instructor_in = true`;
+      } else {
+        await sql`update checkins set instructor_in = false where person_id = ${data.personId} and jump_date = ${data.date}`;
+        await sql`delete from checkins
+          where person_id = ${data.personId} and jump_date = ${data.date} and instructor_in = false and fun_jump = false`;
+      }
+    } else if (data.on) {
       await sql`insert into checkins (person_id, jump_date, created_by)
         values (${data.personId}, ${data.date}, ${context.userId})
         on conflict (person_id, jump_date) do nothing`;
