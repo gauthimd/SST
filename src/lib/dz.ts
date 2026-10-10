@@ -925,22 +925,45 @@ export const seedPractice = createServerFn({ method: "POST" })
       [date],
     );
     if (already[0]) throw new Error("Practice loads are already on this day");
-    const instructor = await sql<{ id: unknown }>`
-      insert into people (kind, name, notes, uspa_license, created_by)
-      values ('instructor', 'Practice · Jordan Hale', 'Sample instructor', 'D-99901', ${context.userId}) returning id`;
-    const pilot = await sql<{ id: unknown }>`
-      insert into people (kind, name, notes, created_by)
-      values ('pilot', 'Practice · Sam Ortiz', 'Sample pilot', ${context.userId}) returning id`;
-    const tandem = await sql<{ id: unknown }>`
-      insert into people (kind, name, phone, notes, created_by)
-      values ('tandem', 'Practice · Maya Chen', '361-555-0142', 'Sample tandem', ${context.userId}) returning id`;
-    const jumper = await sql<{ id: unknown }>`
-      insert into people (kind, name, notes, reserve_repack_on, waiver_signed_on, created_by)
-      values ('fun_jumper', 'Practice · Chris Alvarez', 'Sample fun jumper', ${date}, ${date}, ${context.userId}) returning id`;
-    const iId = n(instructor[0]?.id);
-    const pId = n(pilot[0]?.id);
-    const tId = n(tandem[0]?.id);
-    const jId = n(jumper[0]?.id);
+    const names = [
+      "Practice · Jordan Hale",
+      "Practice · Sam Ortiz",
+      "Practice · Maya Chen",
+      "Practice · Chris Alvarez",
+    ];
+    const found = await sql<{ id: unknown; name: unknown }>`
+      select id, name from people where name in ('Practice · Jordan Hale', 'Practice · Sam Ortiz', 'Practice · Maya Chen', 'Practice · Chris Alvarez')
+      order by id
+    `;
+    const byName = new Map<string, number>();
+    for (const row of found) if (!byName.has(s(row.name))) byName.set(s(row.name), n(row.id));
+    async function practiceId(name: string, insert: () => Promise<number>) {
+      return byName.get(name) ?? insert();
+    }
+    const iId = await practiceId(names[0], async () => {
+      const rows = await sql<{ id: unknown }>`
+        insert into people (kind, name, notes, uspa_license, created_by)
+        values ('instructor', 'Practice · Jordan Hale', 'Sample instructor', 'D-99901', ${context.userId}) returning id`;
+      return n(rows[0]?.id);
+    });
+    const pId = await practiceId(names[1], async () => {
+      const rows = await sql<{ id: unknown }>`
+        insert into people (kind, name, notes, created_by)
+        values ('pilot', 'Practice · Sam Ortiz', 'Sample pilot', ${context.userId}) returning id`;
+      return n(rows[0]?.id);
+    });
+    const tId = await practiceId(names[2], async () => {
+      const rows = await sql<{ id: unknown }>`
+        insert into people (kind, name, phone, notes, created_by)
+        values ('tandem', 'Practice · Maya Chen', '361-555-0142', 'Sample tandem', ${context.userId}) returning id`;
+      return n(rows[0]?.id);
+    });
+    const jId = await practiceId(names[3], async () => {
+      const rows = await sql<{ id: unknown }>`
+        insert into people (kind, name, notes, reserve_repack_on, waiver_signed_on, created_by)
+        values ('fun_jumper', 'Practice · Chris Alvarez', 'Sample fun jumper', ${date}, ${date}, ${context.userId}) returning id`;
+      return n(rows[0]?.id);
+    });
     await sql`insert into checkins (person_id, jump_date, created_by) values
       (${iId}, ${date}, ${context.userId}),
       (${pId}, ${date}, ${context.userId}),

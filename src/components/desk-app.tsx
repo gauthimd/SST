@@ -894,6 +894,20 @@ function AccountsPanel({
   const [selected, setSelected] = useState("");
   const [grantEmail, setGrantEmail] = useState("");
   const [grantRole, setGrantRole] = useState("staff");
+  const [accountQuery, setAccountQuery] = useState("");
+  const [accountKind, setAccountKind] = useState("all");
+  const accountNeedle = accountQuery.trim().toLowerCase();
+  const accountMatches = desk.people.filter((person) => {
+    if (accountKind !== "all" && person.kind !== accountKind) return false;
+    if (!accountNeedle) return false;
+    return (
+      person.name.toLowerCase().includes(accountNeedle) ||
+      person.phone.toLowerCase().includes(accountNeedle) ||
+      person.email.toLowerCase().includes(accountNeedle)
+    );
+  });
+  const shownAccounts = accountMatches.slice(0, 20);
+  const moneyPerson = desk.people.find((person) => String(person.id) === personId && person.kind === "fun_jumper");
 
   return (
     <div className="mt-6 space-y-4">
@@ -931,26 +945,19 @@ function AccountsPanel({
         }}
       >
         <h2 className="text-2xl md:col-span-2">Add jumper money</h2>
-        <select className="field" required value={personId} onChange={(e) => setPersonId(e.target.value)}>
-          <option value="">Fun jumper</option>
-          {desk.people
-            .filter((p) => p.kind === "fun_jumper")
-            .map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} · {money(p.walletCents)}
-              </option>
-            ))}
-        </select>
+        <p className="text-sm text-muted md:col-span-2">
+          {moneyPerson ? moneyPerson.name : "Search for a fun jumper below, then add money."}
+        </p>
         <input className="field" value={amount} onChange={(e) => setAmount(e.target.value)} />
         <input className="field md:col-span-2" placeholder="4242 4242 4242 4242" value={card} onChange={(e) => setCard(e.target.value)} />
         <div className="flex flex-wrap gap-2 md:col-span-2">
-          <button className="btn" disabled={busy}>
+          <button className="btn" disabled={busy || !moneyPerson}>
             Test-card top-up
           </button>
           <button
             type="button"
             className="btn btn-ghost"
-            disabled={busy || !personId}
+            disabled={busy || !moneyPerson}
             onClick={() =>
               run(() =>
                 spendWallet({
@@ -963,31 +970,72 @@ function AccountsPanel({
           </button>
         </div>
       </form>
-      <ul className="space-y-2">
-        {desk.people.map((p) => {
-          const block = jumpBlocker(p, date);
-          return (
-            <li key={p.id}>
-              <button
-                type="button"
-                className="card flex w-full items-center justify-between gap-3 p-4 text-left"
-                onClick={() => setSelected(String(p.id))}
-              >
-                <div>
-                  <p className="font-medium">{p.name}</p>
-                  <p className="text-sm text-muted">
-                    {kindLabel(p.kind)}
-                    {p.phone ? ` · ${p.phone}` : ""} · {p.jumpCount} jumps
-                    {block ? ` · ${block}` : ""}
-                    {!waiverCurrent(p.waiverSignedOn, date) && p.kind !== "pilot" ? " · waiver not signed this year" : ""}
-                  </p>
-                </div>
-                {p.kind === "fun_jumper" ? <p className="font-display text-2xl text-sea">{money(p.walletCents)}</p> : null}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="space-y-2">
+        <label className="block text-sm">
+          Find an account
+          <input
+            className="field mt-1"
+            placeholder="Name, phone, or email"
+            value={accountQuery}
+            onChange={(e) => setAccountQuery(e.target.value)}
+          />
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {[
+            ["all", "All"],
+            ["tandem", "Tandem"],
+            ["fun_jumper", "Fun jumper"],
+            ["instructor", "Instructor"],
+            ["pilot", "Pilot"],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={accountKind === value ? "btn" : "btn btn-ghost"}
+              onClick={() => setAccountKind(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {!accountNeedle ? (
+          <p className="text-sm text-muted">{desk.people.length} accounts. Type a name or phone to open one.</p>
+        ) : shownAccounts.length === 0 ? (
+          <p className="text-sm text-muted">No account matches.</p>
+        ) : (
+          <ul className="space-y-2">
+            {shownAccounts.map((p) => {
+              const block = jumpBlocker(p, date);
+              return (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    className="card flex w-full items-center justify-between gap-3 p-4 text-left"
+                    onClick={() => {
+                      setSelected(String(p.id));
+                      if (p.kind === "fun_jumper") setPersonId(String(p.id));
+                    }}
+                  >
+                    <div>
+                      <p className="font-medium">{p.name}</p>
+                      <p className="text-sm text-muted">
+                        {kindLabel(p.kind)}
+                        {p.phone ? ` · ${p.phone}` : ""} · {p.jumpCount} jumps
+                        {block ? ` · ${block}` : ""}
+                        {!waiverCurrent(p.waiverSignedOn, date) && p.kind !== "pilot" ? " · waiver not signed this year" : ""}
+                      </p>
+                    </div>
+                    {p.kind === "fun_jumper" ? <p className="font-display text-2xl text-sea">{money(p.walletCents)}</p> : null}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {accountMatches.length > shownAccounts.length ? (
+          <p className="text-sm text-muted">Showing 20. Keep typing to narrow it down.</p>
+        ) : null}
+      </div>
       {desk.people.find((p) => String(p.id) === selected) ? (
         <ProfileEditor person={desk.people.find((p) => String(p.id) === selected)!} busy={busy} run={run} date={date} />
       ) : null}
