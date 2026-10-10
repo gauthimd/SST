@@ -627,7 +627,7 @@ export const addSlot = createServerFn({ method: "POST" })
     const people = await peopleQuery("where p.id = $1", data.personId);
     const person = people[0];
     if (!person) throw new Error("Person not found");
-    const block = jumpBlocker(person, jumpDate);
+    const block = jumpBlocker(person, jumpDate, data.role);
     if (block) throw new Error(`${person.name} cannot jump: ${block}`);
     const seated = await sql<{ person_id: unknown; role: unknown; instructor_id: unknown }>`
       select person_id, role, instructor_id from slots where load_id = ${data.loadId}
@@ -656,7 +656,7 @@ export const addSlot = createServerFn({ method: "POST" })
         [data.instructorId, jumpDate],
       );
       if (!instructorIn[0]) throw new Error("That instructor is not checked in");
-      const instructorBlock = jumpBlocker(instructor, jumpDate);
+      const instructorBlock = jumpBlocker(instructor, jumpDate, "instructor");
       if (instructorBlock) throw new Error(`${instructor.name} cannot jump: ${instructorBlock}`);
       if (instructor.id === data.personId) throw new Error("The student and the instructor have to be two people");
       if (seated.some((slot) => slot.role === "tandem" && n(slot.instructor_id) === data.instructorId)) {

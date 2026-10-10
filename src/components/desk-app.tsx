@@ -599,6 +599,7 @@ function LoadCard({
           {choices.map((p) => (
             <option key={p.id} value={p.id}>
               {optionLabel(p, desk)}
+              {seatRole === "fun_jumper" && p.kind === "instructor" ? " · fun jump" : ""}
             </option>
           ))}
         </select>
@@ -655,9 +656,14 @@ function optionLabel(person: Person, desk: Desk) {
 }
 
 function available(desk: Desk, kind: string, date: string) {
-  return desk.people.filter(
-    (p) => p.kind === kind && desk.checkedInIds.includes(p.id) && !jumpBlocker(p, date),
-  );
+  return desk.people.filter((p) => {
+    if (!desk.checkedInIds.includes(p.id)) return false;
+    if (kind === "fun_jumper") {
+      if (p.kind !== "fun_jumper" && p.kind !== "instructor") return false;
+      return !jumpBlocker(p, date, "fun_jumper");
+    }
+    return p.kind === kind && !jumpBlocker(p, date, kind);
+  });
 }
 
 function altitudeLabel(ft: number) {
@@ -1194,7 +1200,14 @@ function ProfileEditor({
             Reserve repack
             <input className="field mt-1" type="date" value={form.reserveRepackOn} onChange={(e) => set("reserveRepackOn", e.target.value)} />
           </label>
-          <p className="self-end text-sm text-muted">{exp ? `Reserve expires ${exp} (180 days)` : "No repack date yet"}</p>
+          <p className="self-end text-sm text-muted">
+            {person.kind === "instructor"
+              ? "Company gear covers a tandem load. A reserve date is required only when they fun jump."
+              : exp
+                ? `Reserve expires ${exp} (180 days)`
+                : "No repack date yet"}
+            {person.kind === "instructor" && exp ? ` On file: expires ${exp}.${exp < date ? " That date is expired, so they cannot fun jump." : ""}` : ""}
+          </p>
         </div>
       ) : null}
       <label className="flex items-center gap-2 text-sm">
