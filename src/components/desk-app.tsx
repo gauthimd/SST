@@ -1135,6 +1135,7 @@ function ProfileEditor({
     listJumps({ data: person.id }).then(setJumps).catch(() => setJumps([]));
   }, [person.id, person.jumpCount]);
   const exp = reserveExpires(form.reserveRepackOn);
+  const automatic = jumpBlocker({ ...form, nojump: false, nojumpNote: "" }, date);
   const block = jumpBlocker(form, date);
   function set<K extends keyof Person>(key: K, value: Person[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -1197,9 +1198,12 @@ function ProfileEditor({
         </div>
       ) : null}
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={form.nojump} onChange={(e) => set("nojump", e.target.checked)} />
+        <input type="checkbox" checked={form.nojump || Boolean(automatic)} disabled={Boolean(automatic)} onChange={(e) => set("nojump", e.target.checked)} />
         No-jump flag
       </label>
+      {automatic ? (
+        <p className="text-sm text-muted">On by itself until the missing or expired item is fixed. Checking in does not clear it.</p>
+      ) : null}
       <input className="field" placeholder="Why they cannot jump" value={form.nojumpNote} onChange={(e) => set("nojumpNote", e.target.value)} />
       <textarea className="field min-h-20" placeholder="Notes" value={form.notes} onChange={(e) => set("notes", e.target.value)} />
       <button className="btn" disabled={busy}>
@@ -1273,9 +1277,6 @@ function CheckinPanel({
                     <span className="text-sm">
                       {p.name}
                       {block ? <span className="block text-coral">{block}</span> : null}
-                      {!block && (kind === "fun_jumper" || kind === "instructor") && !p.reserveRepackOn ? (
-                        <span className="block text-muted">No reserve date</span>
-                      ) : null}
                     </span>
                     <button
                       type="button"

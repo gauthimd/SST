@@ -18,15 +18,31 @@ export function reserveExpires(repack: string) {
   return addDays(repack, 180);
 }
 
-export function jumpBlocker(
-  person: { kind: string; nojump: boolean; nojumpNote: string; reserveRepackOn: string },
-  jumpDate: string,
-) {
+type JumpPerson = {
+  kind: string;
+  nojump: boolean;
+  nojumpNote: string;
+  reserveRepackOn: string;
+  uspaMemberNumber: string;
+  uspaMemberExpires: string;
+  waiverSignedOn: string;
+};
+
+function iso(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+export function jumpBlocker(person: JumpPerson, jumpDate: string) {
   if (person.nojump) return person.nojumpNote.trim() || "No-jump flag";
+  const jumps = person.kind === "fun_jumper" || person.kind === "instructor" || person.kind === "tandem";
   if (person.kind === "fun_jumper" || person.kind === "instructor") {
+    if (!iso(person.reserveRepackOn)) return "No-jump: reserve repack date is missing";
     const exp = reserveExpires(person.reserveRepackOn);
-    if (exp && exp < jumpDate) return `Reserve expired ${exp}`;
+    if (exp < jumpDate) return `No-jump: reserve expired ${exp}`;
+    if (!person.uspaMemberNumber.trim() || !iso(person.uspaMemberExpires)) return "No-jump: USPA membership is missing";
+    if (person.uspaMemberExpires < jumpDate) return `No-jump: USPA membership expired ${person.uspaMemberExpires}`;
   }
+  if (jumps && !waiverCurrent(person.waiverSignedOn, jumpDate)) return "No-jump: waiver is not signed this year";
   return "";
 }
 
