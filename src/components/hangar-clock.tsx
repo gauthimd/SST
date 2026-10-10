@@ -212,14 +212,14 @@ export function HangarClock({ date }: { date: string }) {
 
           <div className="flex min-h-0 flex-col">
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-3 text-center">
-              <p className="font-['Courier_New',monospace] text-2xl text-[#00ccff] xl:text-3xl">{clock}</p>
-              <p className="mt-3 text-xl font-bold text-[#cccccc]">{current ? `Load ${current.loadNumber} Call` : "Load Call"}</p>
+              <p className="font-['Courier_New',monospace] text-5xl text-[#00ccff] xl:text-6xl">{clock}</p>
+              <p className="mt-4 text-4xl font-bold text-[#cccccc]">{current ? `Load ${current.loadNumber} Call` : "Load Call"}</p>
               {timerOn ? (
-                <p className="mt-2 font-['Courier_New',monospace] text-7xl font-bold tabular-nums xl:text-8xl" style={{ color: timeColor }}>
+                <p className="mt-2 font-['Courier_New',monospace] text-[9rem] leading-none font-bold tabular-nums xl:text-[11rem]" style={{ color: timeColor }}>
                   {timeText}
                 </p>
               ) : null}
-              <p className="mt-1 min-h-5 text-sm font-bold text-[#ff2222]">{status}</p>
+              <p className="mt-2 min-h-8 text-3xl font-bold text-[#ff2222]">{status}</p>
               {error ? <p className="mt-1 max-w-sm text-sm text-[#ff8888]">{error}</p> : null}
               <div className="mt-2 flex flex-wrap justify-center gap-2">
                 <ClockButton
@@ -251,18 +251,18 @@ export function HangarClock({ date }: { date: string }) {
               {counting ? null : <p className="sr-only">Countdown {timeText}</p>}
             </div>
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-3 pb-3">
-              <p className="text-sm font-bold text-[#00ccff] xl:text-base">WINDS & TEMP — PORT ARANSAS</p>
-              <p className="text-xs text-[#88aacc]">(arrows point downwind)</p>
-              <p className="mb-2 text-[11px] text-[#88aacc]">Last update: {updated}</p>
+              <p className="text-2xl font-bold text-[#00ccff] xl:text-3xl">WINDS & TEMP — PORT ARANSAS</p>
+              <p className="text-base text-[#88aacc]">(arrows point downwind)</p>
+              <p className="mb-3 text-sm text-[#88aacc]">Last update: {updated}</p>
               {ALTS.map((alt) => (
-                <p key={alt} className="whitespace-nowrap font-['Courier_New',monospace] text-sm text-white xl:text-lg">
-                  <span className="inline-block w-28 text-right text-[#cccccc]">{alt}:</span> {winds[alt]}
+                <p key={alt} className="whitespace-nowrap font-['Courier_New',monospace] text-2xl text-white xl:text-4xl">
+                  <span className="inline-block w-56 text-right text-[#cccccc]">{alt}:</span> {winds[alt]}
                 </p>
               ))}
-              <p className="mt-2 whitespace-nowrap font-['Courier_New',monospace] text-sm xl:text-base">
+              <p className="mt-3 whitespace-nowrap font-['Courier_New',monospace] text-2xl xl:text-3xl">
                 <span className="text-[#cccccc]">Sunset today:</span> <span className="text-[#00ff88]">{sunset}</span>
               </p>
-              <p className="mt-2 text-[10px] text-[#6688bb]">Data source: Open-Meteo</p>
+              <p className="mt-3 text-sm text-[#6688bb]">Data source: Open-Meteo</p>
             </div>
           </div>
 
@@ -336,7 +336,7 @@ function ClockButton({ color, onClick, children }: { color: string; onClick: () 
   return (
     <button
       type="button"
-      className="rounded border border-[#0044aa] bg-[#002266] px-3 py-2 text-xs font-bold"
+      className="rounded border border-[#0044aa] bg-[#002266] px-5 py-3 text-lg font-bold"
       style={{ color }}
       onClick={onClick}
     >
