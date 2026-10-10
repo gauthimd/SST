@@ -35,6 +35,7 @@ import {
   type Person,
 } from "@/lib/dz";
 import { ALTITUDES, TAILS, jumpBlocker, reserveExpires, waiverCurrent } from "@/lib/jumper";
+import { afterAdd, canFinish, isFull, passengerCount, seatCounts } from "@/lib/load-capacity";
 
 function errText(e: unknown) {
   return e instanceof Error ? e.message : "Something didn't save";
@@ -486,7 +487,24 @@ function LoadCard({
   const instructors = available(desk, "instructor", date);
   const funJumpers = available(desk, "fun_jumper", date);
   const tandems = desk.people.filter((p) => p.kind === "tandem" && !jumpBlocker(p, date));
-  const choices = role === "tandem" ? tandems : role === "fun_jumper" ? funJumpers : role === "instructor" ? instructors : instructors;
+  const counts = seatCounts(load.slots);
+  const full = isFull(counts);
+  const used = passengerCount(counts);
+  const newPairFits = canFinish(afterAdd(counts, "tandem_with_instructor"));
+  const pairedInstructorIds = new Set(load.slots.filter((slot) => slot.role === "tandem" && slot.instructorId).map((slot) => slot.instructorId));
+  const instructorIdsOnLoad = new Set(load.slots.filter((slot) => slot.role === "instructor").map((slot) => slot.personId));
+  const tandemInstructors = instructors.filter((person) => {
+    if (pairedInstructorIds.has(person.id)) return false;
+    if (instructorIdsOnLoad.has(person.id)) return true;
+    return newPairFits;
+  });
+  const roleChoices = [
+    canFinish(afterAdd(counts, "fun_jumper")) ? "fun_jumper" : "",
+    canFinish(afterAdd(counts, counts.tandems >= counts.instructors ? "tandem_with_instructor" : "tandem")) ? "tandem" : "",
+    canFinish(afterAdd(counts, "instructor")) ? "instructor" : "",
+  ].filter(Boolean);
+  const seatRole = roleChoices.includes(role) ? role : roleChoices[0] ?? "fun_jumper";
+  const choices = seatRole === "tandem" ? tandems : seatRole === "instructor" ? instructors : funJumpers;
 
   return (
     <article className="card p-4">
@@ -549,6 +567,13 @@ function LoadCard({
         ))}
         {load.slots.length === 0 ? <li className="text-muted">Empty load</li> : null}
       </ul>
+      <p className="mt-2 text-sm text-muted">
+        {used} of 4 seats. The pilot is extra. A full load is two tandem pairs, one tandem pair plus two fun jumpers, or
+        four fun jumpers.
+      </p>
+      {full ? (
+        <p className="mt-3 text-sm">This load is full.</p>
+      ) : (
       <form
         className="mt-3 grid gap-2 md:grid-cols-2"
         onSubmit={(e) => {
@@ -558,34 +583,33 @@ function LoadCard({
               data: {
                 loadId: load.id,
                 personId: Number(personId),
-                role,
+                role: seatRole,
                 instructorId: Number(instructorId || 0),
-                jumpType: role === "tandem" ? jumpType : "",
-                media: role === "tandem" ? media : "",
+                jumpType: seatRole === "tandem" ? jumpType : "",
+                media: seatRole === "tandem" ? media : "",
               },
             }),
           );
         }}
       >
-        <select className="field" value={role} onChange={(e) => { setRole(e.target.value); setPersonId(""); }}>
-          <option value="fun_jumper">Fun jumper</option>
-          <option value="tandem">Tandem</option>
-          <option value="instructor">Instructor</option>
-          <option value="videographer">Video</option>
+        <select className="field" value={seatRole} onChange={(e) => { setRole(e.target.value); setPersonId(""); }}>
+          {roleChoices.includes("fun_jumper") ? <option value="fun_jumper">Fun jumper</option> : null}
+          {roleChoices.includes("tandem") ? <option value="tandem">Tandem student</option> : null}
+          {roleChoices.includes("instructor") ? <option value="instructor">Tandem instructor</option> : null}
         </select>
         <select className="field" required value={personId} onChange={(e) => setPersonId(e.target.value)}>
-          <option value="">{role === "tandem" ? "Tandem jumper" : "Checked in"}</option>
+          <option value="">{seatRole === "tandem" ? "Tandem jumper" : "Checked in"}</option>
           {choices.map((p) => (
             <option key={p.id} value={p.id}>
               {optionLabel(p, desk)}
             </option>
           ))}
         </select>
-        {role === "tandem" ? (
+        {seatRole === "tandem" ? (
           <>
             <select className="field" required value={instructorId} onChange={(e) => setInstructorId(e.target.value)}>
               <option value="">Tandem instructor</option>
-              {instructors.map((p) => (
+              {tandemInstructors.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
@@ -607,6 +631,7 @@ function LoadCard({
           Put on load
         </button>
       </form>
+      )}
       <div className="mt-3 flex flex-wrap gap-2">
         {["open", "boarding", "airborne", "landed"].map((status) => (
           <button

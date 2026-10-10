@@ -4,6 +4,7 @@ import { getSql } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 import { FUN_JUMP_CENTS, assertTestCard, quote } from "@/lib/catalog";
 import { ALTITUDES, TAILS, jumpBlocker } from "@/lib/jumper";
+import { afterAdd, canFinish, seatCounts, seatRefusal } from "@/lib/load-capacity";
 
 export type Role = "owner" | "admin" | "staff";
 
@@ -628,6 +629,14 @@ export const addSlot = createServerFn({ method: "POST" })
     if (!person) throw new Error("Person not found");
     const block = jumpBlocker(person, jumpDate);
     if (block) throw new Error(`${person.name} cannot jump: ${block}`);
+    const seated = await sql<{ person_id: unknown; role: unknown; instructor_id: unknown }>`
+      select person_id, role, instructor_id from slots where load_id = ${data.loadId}
+    `;
+    if (seated.some((slot) => n(slot.person_id) === data.personId)) throw new Error(`${person.name} is already on this load`);
+    if (data.role === "videographer") {
+      throw new Error("Video rides with the tandem instructor. It is not another seat.");
+    }
+    const counts = seatCounts(seated.map((slot) => ({ role: s(slot.role) })));
     const checked = await sql.query<{ person_id: unknown }>(
       `select person_id from checkins where person_id = $1 and jump_date = $2`,
       [data.personId, jumpDate],
@@ -649,7 +658,17 @@ export const addSlot = createServerFn({ method: "POST" })
       if (!instructorIn[0]) throw new Error("That instructor is not checked in");
       const instructorBlock = jumpBlocker(instructor, jumpDate);
       if (instructorBlock) throw new Error(`${instructor.name} cannot jump: ${instructorBlock}`);
+      if (instructor.id === data.personId) throw new Error("The student and the instructor have to be two people");
+      if (seated.some((slot) => slot.role === "tandem" && n(slot.instructor_id) === data.instructorId)) {
+        throw new Error(`${instructor.name} already has a student on this load`);
+      }
+      const instructorOnLoad = seated.some((slot) => n(slot.person_id) === data.instructorId);
+      const next = afterAdd(counts, instructorOnLoad ? "tandem" : "tandem_with_instructor");
+      if (!canFinish(next)) throw new Error(seatRefusal(counts));
       instructorId = data.instructorId;
+    } else {
+      const next = afterAdd(counts, data.role === "instructor" ? "instructor" : "fun_jumper");
+      if (!canFinish(next)) throw new Error(seatRefusal(counts));
     }
     const rows = await sql<{ id: unknown }>`
       insert into slots (load_id, person_id, role, instructor_id, jump_type, media, created_by)
