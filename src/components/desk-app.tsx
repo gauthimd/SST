@@ -406,7 +406,7 @@ function LoadsPanel({
 
   return (
     <div className="mt-6 space-y-4">
-      <LoadClock loads={desk.loads} />
+      <LoadClock loads={desk.loads} date={date} />
       <form
         className="card grid gap-3 p-4 md:grid-cols-4"
         onSubmit={(e) => {
@@ -716,7 +716,7 @@ function countdown(takeoff: string) {
   return past ? `${text} past takeoff` : `${text} to takeoff`;
 }
 
-function LoadClock({ loads }: { loads: Load[] }) {
+function LoadClock({ loads, date }: { loads: Load[]; date: string }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const t = window.setInterval(() => setNow(new Date()), 1000);
@@ -736,6 +736,9 @@ function LoadClock({ loads }: { loads: Load[] }) {
             }`
           : "No takeoff set. Add a load and the clock counts down to it."}
       </p>
+      <a className="btn mt-4" href={`/clock?date=${date}`} target="_blank" rel="noopener noreferrer">
+        Open Load Clock
+      </a>
     </section>
   );
 }

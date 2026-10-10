@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BookRouteImport } from './routes/book'
+import { Route as ClockRouteImport } from './routes/clock'
 import { Route as DeskRouteImport } from './routes/desk'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as GiftCardsRouteImport } from './routes/gift-cards'
@@ -34,6 +35,11 @@ const IndexRoute = IndexRouteImport.update({
 const BookRoute = BookRouteImport.update({
   id: '/book',
   path: '/book',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClockRoute = ClockRouteImport.update({
+  id: '/clock',
+  path: '/clock',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeskRoute = DeskRouteImport.update({
@@ -110,6 +116,7 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/book': typeof BookRoute
+  '/clock': typeof ClockRoute
   '/desk': typeof DeskRoute
   '/faq': typeof FaqRoute
   '/gift-cards': typeof GiftCardsRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/book': typeof BookRoute
+  '/clock': typeof ClockRoute
   '/desk': typeof DeskRoute
   '/faq': typeof FaqRoute
   '/gift-cards': typeof GiftCardsRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/book': typeof BookRoute
+  '/clock': typeof ClockRoute
   '/desk': typeof DeskRoute
   '/faq': typeof FaqRoute
   '/gift-cards': typeof GiftCardsRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/book'
+    | '/clock'
     | '/desk'
     | '/faq'
     | '/gift-cards'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/book'
+    | '/clock'
     | '/desk'
     | '/faq'
     | '/gift-cards'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/book'
+    | '/clock'
     | '/desk'
     | '/faq'
     | '/gift-cards'
@@ -222,6 +234,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BookRoute: typeof BookRoute
+  ClockRoute: typeof ClockRoute
   DeskRoute: typeof DeskRoute
   FaqRoute: typeof FaqRoute
   GiftCardsRoute: typeof GiftCardsRoute
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       path: '/book'
       fullPath: '/book'
       preLoaderRoute: typeof BookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clock': {
+      id: '/clock'
+      path: '/clock'
+      fullPath: '/clock'
+      preLoaderRoute: typeof ClockRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/desk': {
@@ -358,6 +378,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BookRoute: BookRoute,
+  ClockRoute: ClockRoute,
   DeskRoute: DeskRoute,
   FaqRoute: FaqRoute,
   GiftCardsRoute: GiftCardsRoute,
