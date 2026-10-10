@@ -118,7 +118,7 @@ export function HangarClock({ date }: { date: string }) {
     const to = direction === "right" ? width + 40 : -340;
     const started = performance.now();
     const step = (time: number) => {
-      const p = Math.min(1, (time - started) / 2200);
+      const p = Math.min(1, (time - started) / 4400);
       setPlane({ x: from + (to - from) * p, y, flip: direction === "left" });
       if (p < 1) {
         frameRef.current = requestAnimationFrame(step);
@@ -205,7 +205,7 @@ export function HangarClock({ date }: { date: string }) {
               <img
                 src="/clock/portasatview.png"
                 alt="Mustang Island from above"
-                className="h-full w-full rounded-sm border border-[#00ccff] object-contain"
+                className="h-full w-full object-contain"
               />
             </div>
           </div>
