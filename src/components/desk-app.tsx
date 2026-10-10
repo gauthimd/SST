@@ -9,6 +9,7 @@ import {
   createBooking,
   createLoad,
   createPerson,
+  decideStaffRequest,
   fundWallet,
   getAnalytics,
   getMe,
@@ -22,6 +23,7 @@ import {
   setLoadStatus,
   setMembership,
   spendWallet,
+  staffRoleLabel,
   toggleCheckin,
   updatePerson,
   type Analytics,
@@ -88,7 +90,7 @@ function CustomerHome({
 }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [kind, setKind] = useState<"tandem" | "fun_jumper">("tandem");
+  const [kind, setKind] = useState<"tandem" | "fun_jumper" | "instructor" | "pilot" | "manifest">("tandem");
   const [productId, setProductId] = useState<string>(PRODUCTS[0].id);
   const [media, setMedia] = useState("none");
   const [date, setDate] = useState(todayChicago());
@@ -126,12 +128,25 @@ function CustomerHome({
         </section>
       ) : null}
       {error ? <p className="text-sm text-coral">{error}</p> : null}
-      {!me.person ? (
+      {me.staffRequest?.status === "pending" ? (
+        <section className="card p-5">
+          <h2 className="text-2xl">Waiting for confirmation</h2>
+          <p className="mt-2 text-muted">
+            This staff account is for a {staffRoleLabel(me.staffRequest.staffRole).toLowerCase()}. It is not active
+            yet. An admin has to confirm you are staff before you can get on a load or run manifest.
+          </p>
+        </section>
+      ) : !me.person ? (
         <section className="card space-y-3 p-5">
           <h2 className="text-2xl">Open an account</h2>
-          <div className="grid grid-cols-2 gap-2">
+          <p className="text-sm text-muted">
+            Fun jumper means a USPA licensed skydiver. Tandem is a student jump. Staff is only for tandem instructors,
+            pilots, and manifest, and an admin has to confirm it.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-3">
             <button type="button" className={kind === "tandem" ? "btn" : "btn btn-ghost"} onClick={() => setKind("tandem")}>
               Tandem
+              <span className="mt-1 block text-xs font-normal">Student jump</span>
             </button>
             <button
               type="button"
@@ -139,8 +154,37 @@ function CustomerHome({
               onClick={() => setKind("fun_jumper")}
             >
               Fun jumper
+              <span className="mt-1 block text-xs font-normal">USPA licensed skydiver</span>
+            </button>
+            <button
+              type="button"
+              className={kind === "instructor" || kind === "pilot" || kind === "manifest" ? "btn" : "btn btn-ghost"}
+              onClick={() => setKind((current) => (current === "tandem" || current === "fun_jumper" ? "instructor" : current))}
+            >
+              Staff
+              <span className="mt-1 block text-xs font-normal">Instructor, pilot, manifest</span>
             </button>
           </div>
+          {kind === "instructor" || kind === "pilot" || kind === "manifest" ? (
+            <div className="grid gap-2 sm:grid-cols-3">
+              {(
+                [
+                  ["instructor", "Tandem instructor"],
+                  ["pilot", "Pilot"],
+                  ["manifest", "Manifest"],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={kind === value ? "btn" : "btn btn-ghost"}
+                  onClick={() => setKind(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <input className="field" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
           <input className="field" placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
           <button className="btn" disabled={busy} onClick={() => run(() => openMyAccount({ data: { kind, name, phone } }))}>
@@ -150,13 +194,24 @@ function CustomerHome({
       ) : (
         <>
           <section className="card p-5">
-            <p className="text-xs font-semibold tracking-[0.14em] text-sea uppercase">{me.person.kind.replace("_", " ")}</p>
+            <p className="text-xs font-semibold tracking-[0.14em] text-sea uppercase">{kindLabel(me.person.kind)}</p>
             <h2 className="text-3xl">{me.person.name}</h2>
             {me.person.kind === "fun_jumper" ? (
               <p className="mt-2 font-display text-3xl text-sea">{money(me.person.walletCents)} on account</p>
             ) : null}
+            {me.person.kind === "fun_jumper" ? (
+              <p className="mt-2 text-sm text-muted">USPA licensed skydiver.</p>
+            ) : null}
           </section>
-          {me.person.kind !== "fun_jumper" ? (
+          {me.person.kind === "instructor" || me.person.kind === "pilot" || me.person.kind === "crew" ? (
+            <section className="card p-5">
+              <p className="text-muted">
+                {me.person.kind === "crew"
+                  ? "Your manifest login is active."
+                  : `You're confirmed as a ${kindLabel(me.person.kind).toLowerCase()}. Manifest can put you on a load after you check in.`}
+              </p>
+            </section>
+          ) : me.person.kind !== "fun_jumper" ? (
             <section className="card space-y-3 p-5">
               <h2 className="text-2xl">Hold a tandem with a deposit</h2>
               <p className="text-sm text-muted">
@@ -829,10 +884,11 @@ function AccountsPanel({
       >
         <h2 className="text-2xl md:col-span-2">New account</h2>
         <select className="field" value={kind} onChange={(e) => setKind(e.target.value)}>
-          <option value="tandem">Tandem</option>
-          <option value="fun_jumper">Fun jumper</option>
+          <option value="tandem">Tandem student</option>
+          <option value="fun_jumper">Fun jumper (USPA licensed skydiver)</option>
           <option value="instructor">Tandem instructor</option>
           <option value="pilot">Pilot</option>
+          <option value="crew">Manifest</option>
         </select>
         <input className="field" placeholder="Name" required value={name} onChange={(e) => setName(e.target.value)} />
         <input className="field" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -913,6 +969,43 @@ function AccountsPanel({
       {desk.people.find((p) => String(p.id) === selected) ? (
         <ProfileEditor person={desk.people.find((p) => String(p.id) === selected)!} busy={busy} run={run} date={date} />
       ) : null}
+      {admin && desk.staffRequests.length > 0 ? (
+        <section className="card space-y-3 p-4">
+          <h2 className="text-2xl">Staff waiting for confirmation</h2>
+          <p className="text-sm text-muted">
+            Someone asked for a staff account. Approve only tandem instructors, pilots, and manifest workers.
+          </p>
+          {desk.staffRequests.map((request) => (
+            <div key={request.id} className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
+              <div>
+                <p className="font-medium">{request.name}</p>
+                <p className="text-sm text-muted">
+                  {request.email || "No email"} · {staffRoleLabel(request.staffRole)}
+                  {request.phone ? ` · ${request.phone}` : ""}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={busy}
+                  onClick={() => run(() => decideStaffRequest({ data: { id: request.id, approve: true } }))}
+                >
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  disabled={busy}
+                  onClick={() => run(() => decideStaffRequest({ data: { id: request.id, approve: false } }))}
+                >
+                  Decline
+                </button>
+              </div>
+            </div>
+          ))}
+        </section>
+      ) : null}
       {admin ? (
         <form
           className="card grid gap-3 p-4 md:grid-cols-[1fr_auto_auto]"
@@ -942,9 +1035,10 @@ function AccountsPanel({
 
 function kindLabel(kind: string) {
   if (kind === "fun_jumper") return "Fun jumper";
-  if (kind === "instructor") return "Instructor";
+  if (kind === "instructor") return "Tandem instructor";
   if (kind === "pilot") return "Pilot";
   if (kind === "tandem") return "Tandem";
+  if (kind === "crew") return "Manifest";
   return kind.replaceAll("_", " ");
 }
 

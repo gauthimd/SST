@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
+import { sendMail } from "@/lib/mail";
 import { FUN_JUMP_CENTS, assertTestCard, quote } from "@/lib/catalog";
 import { ALTITUDES, TAILS, jumpBlocker } from "@/lib/jumper";
 
@@ -80,6 +81,16 @@ export type Me = {
   ownerExists: boolean;
   person: Person | null;
   bookings: Booking[];
+  staffRequest: StaffRequest | null;
+};
+
+export type StaffRequest = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  staffRole: string;
+  status: string;
 };
 
 export type Desk = {
@@ -88,6 +99,7 @@ export type Desk = {
   people: Person[];
   checkedInIds: number[];
   audit: Audit[];
+  staffRequests: StaffRequest[];
 };
 
 export type JumpEntry = {
@@ -118,6 +130,13 @@ export type Analytics = {
 
 export function isAdmin(role: Role | null) {
   return role === "owner" || role === "admin";
+}
+
+export function staffRoleLabel(role: string) {
+  if (role === "instructor") return "Tandem instructor";
+  if (role === "pilot") return "Pilot";
+  if (role === "manifest") return "Manifest";
+  return role;
 }
 
 function n(v: unknown) {
@@ -294,6 +313,67 @@ function cleanName(name: string) {
   return trimmed.slice(0, 80);
 }
 
+function mapStaffRequest(row: {
+  id: unknown;
+  name: unknown;
+  email: unknown;
+  phone: unknown;
+  staff_role: unknown;
+  status: unknown;
+}): StaffRequest {
+  return {
+    id: n(row.id),
+    name: s(row.name),
+    email: s(row.email),
+    phone: s(row.phone),
+    staffRole: s(row.staff_role),
+    status: s(row.status),
+  };
+}
+
+async function myStaffRequest(userId: string) {
+  const sql = await getSql();
+  const rows = await sql<{
+    id: unknown;
+    name: unknown;
+    email: unknown;
+    phone: unknown;
+    staff_role: unknown;
+    status: unknown;
+  }>`select id, name, email, phone, staff_role, status from staff_requests where user_id = ${userId}`;
+  return rows[0] ? mapStaffRequest(rows[0]) : null;
+}
+
+async function pendingStaffRequests() {
+  const sql = await getSql();
+  const rows = await sql<{
+    id: unknown;
+    name: unknown;
+    email: unknown;
+    phone: unknown;
+    staff_role: unknown;
+    status: unknown;
+  }>`select id, name, email, phone, staff_role, status from staff_requests where status = 'pending' order by id`;
+  return rows.map(mapStaffRequest);
+}
+
+async function emailAdminsAboutStaff(name: string, email: string, staffRole: string) {
+  const sql = await getSql();
+  const rows = await sql<{ email: unknown }>`
+    select u.email as email
+    from memberships m
+    join "user" u on u.id = m.user_id
+    where m.role in ('owner', 'admin')
+  `;
+  const label = staffRoleLabel(staffRole);
+  const desk = (process.env.BETTER_AUTH_URL || "https://sstwdb.vercel.app").replace(/\/$/, "");
+  return sendMail(
+    rows.map((row) => s(row.email)),
+    `Confirm staff account: ${name}`,
+    `${name} (${email || "no email"}) asked for a staff account as a ${label}.\n\nThey are not active until you confirm them. Open ${desk}/desk, go to Accounts, and approve or decline the request.\n\nStaff accounts are only for tandem instructors, pilots, and manifest.`,
+  );
+}
+
 export const getMe = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<Me> => {
@@ -310,7 +390,7 @@ export const getMe = createServerFn({ method: "GET" })
           )
         ).map(mapBooking)
       : [];
-    return { role, ownerExists: n(owners[0]?.n) > 0, person, bookings };
+    return { role, ownerExists: n(owners[0]?.n) > 0, person, bookings, staffRequest: await myStaffRequest(context.userId) };
   });
 
 export const claimDesk = createServerFn({ method: "POST" })
@@ -429,6 +509,7 @@ export const loadDesk = createServerFn({ method: "GET" })
         detail: s(row.detail),
         at: s(row.at),
       })),
+      staffRequests: isAdmin(role) ? await pendingStaffRequests() : [],
     };
   });
 
@@ -742,24 +823,39 @@ export const spendWallet = createServerFn({ method: "POST" })
 
 export const openMyAccount = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((input: { kind: string; name: string; phone: string }) => ({
-    kind: input.kind === "tandem" ? "tandem" : "fun_jumper",
-    name: cleanName(input.name ?? ""),
-    phone: (input.phone ?? "").trim().slice(0, 40),
-  }))
+  .validator((input: { kind: string; name: string; phone: string }) => {
+    const allowed = ["tandem", "fun_jumper", "instructor", "pilot", "manifest"];
+    return {
+      kind: allowed.includes(input.kind) ? input.kind : "fun_jumper",
+      name: cleanName(input.name ?? ""),
+      phone: (input.phone ?? "").trim().slice(0, 40),
+    };
+  })
   .handler(async ({ context, data }) => {
     const sql = await getSql();
     const existing = await sql<{ id: unknown }>`select id from people where linked_user_id = ${context.userId}`;
-    if (existing[0]) return { id: n(existing[0].id) };
+    if (existing[0]) return { id: n(existing[0].id), pending: false };
     const user = await sql<{ email: unknown }>`select email from "user" where id = ${context.userId}`;
+    const email = s(user[0]?.email);
+    if (data.kind === "instructor" || data.kind === "pilot" || data.kind === "manifest") {
+      const prior = await sql<{ status: unknown }>`select status from staff_requests where user_id = ${context.userId}`;
+      if (s(prior[0]?.status) === "approved") throw new Error("This staff account is already confirmed");
+      await sql`insert into staff_requests (user_id, name, email, phone, staff_role, status)
+        values (${context.userId}, ${data.name}, ${email}, ${data.phone}, ${data.kind}, 'pending')
+        on conflict (user_id) do update
+          set name = ${data.name}, email = ${email}, phone = ${data.phone}, staff_role = ${data.kind}, status = 'pending'`;
+      await audit(context.userId, "staff_request", "staff_request", context.userId, `${data.kind}: ${data.name}`);
+      const emailed = await emailAdminsAboutStaff(data.name, email, data.kind);
+      return { id: 0, pending: true, emailed };
+    }
     const rows = await sql<{ id: unknown }>`
       insert into people (kind, name, email, phone, linked_user_id, created_by)
-      values (${data.kind}, ${data.name}, ${s(user[0]?.email)}, ${data.phone}, ${context.userId}, ${context.userId})
+      values (${data.kind}, ${data.name}, ${email}, ${data.phone}, ${context.userId}, ${context.userId})
       returning id
     `;
     const id = n(rows[0]?.id);
     await audit(context.userId, "open_account", "person", String(id), `${data.kind}: ${data.name}`);
-    return { id };
+    return { id, pending: false, emailed: false };
   });
 
 export const bookSelf = createServerFn({ method: "POST" })
@@ -1044,6 +1140,49 @@ export const setMembership = createServerFn({ method: "POST" })
     await sql`insert into memberships (user_id, role) values (${userId}, ${data.role})
       on conflict (user_id) do update set role = ${data.role}`;
     await audit(context.userId, "set_membership", "membership", userId, `${data.email} ${data.role}`);
+    return { ok: true };
+  });
+
+export const decideStaffRequest = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((input: { id: number; approve: boolean }) => ({
+    id: n(input.id),
+    approve: Boolean(input.approve),
+  }))
+  .handler(async ({ context, data }) => {
+    await requireAdmin(context.userId);
+    const sql = await getSql();
+    const rows = await sql<{
+      id: unknown;
+      user_id: unknown;
+      name: unknown;
+      email: unknown;
+      phone: unknown;
+      staff_role: unknown;
+      status: unknown;
+    }>`select id, user_id, name, email, phone, staff_role, status from staff_requests where id = ${data.id}`;
+    const request = rows[0];
+    if (!request) throw new Error("That request is gone");
+    if (s(request.status) !== "pending") throw new Error("That request was already answered");
+    if (!data.approve) {
+      await sql`update staff_requests set status = 'declined' where id = ${data.id}`;
+      await audit(context.userId, "decline_staff", "staff_request", String(data.id), s(request.email));
+      return { ok: true };
+    }
+    const staffRole = s(request.staff_role);
+    const kind = staffRole === "manifest" ? "crew" : staffRole;
+    const userId = s(request.user_id);
+    const linked = await sql<{ id: unknown }>`select id from people where linked_user_id = ${userId}`;
+    if (!linked[0]) {
+      await sql`insert into people (kind, name, email, phone, linked_user_id, created_by)
+        values (${kind}, ${s(request.name)}, ${s(request.email)}, ${s(request.phone)}, ${userId}, ${context.userId})`;
+    }
+    if (staffRole === "manifest") {
+      await sql`insert into memberships (user_id, role) values (${userId}, 'staff')
+        on conflict (user_id) do nothing`;
+    }
+    await sql`update staff_requests set status = 'approved' where id = ${data.id}`;
+    await audit(context.userId, "approve_staff", "staff_request", String(data.id), `${s(request.email)} ${staffRole}`);
     return { ok: true };
   });
 

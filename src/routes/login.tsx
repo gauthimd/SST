@@ -2,8 +2,11 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
 import { SiteNav } from "@/components/site-nav";
+import { openMyAccount } from "@/lib/dz";
 
 export const Route = createFileRoute("/login")({ component: Login });
+
+type AccountKind = "tandem" | "fun_jumper" | "instructor" | "pilot" | "manifest";
 
 function Login() {
   const router = useRouter();
@@ -11,8 +14,10 @@ function Login() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [kind, setKind] = useState<AccountKind>("tandem");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const staff = kind === "instructor" || kind === "pilot" || kind === "manifest";
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -24,6 +29,9 @@ function Login() {
           ? await authClient.signUp.email({ name, email, password, callbackURL: "/desk" })
           : await authClient.signIn.email({ email, password, callbackURL: "/desk" });
       if (result.error) throw new Error(result.error.message ?? "Sign-in failed");
+      if (mode === "up") {
+        await openMyAccount({ data: { kind, name, phone: "" } });
+      }
       await router.invalidate();
       await router.navigate({ to: "/desk" });
     } catch (err) {
@@ -41,8 +49,8 @@ function Login() {
           <p className="text-xs font-semibold tracking-[0.16em] text-sea uppercase">Accounts</p>
           <h1 className="mt-2 text-5xl">Sign in to book or run the desk</h1>
           <p className="mt-4 text-muted leading-relaxed">
-            Tandem students leave a deposit. Fun jumpers add money to an account. The first person to claim the
-            manifest becomes the owner — after that, customers only see their own jumps.
+            Tandem students leave a deposit. Fun jumper means a USPA licensed skydiver. Staff is for tandem
+            instructors, pilots, and manifest, and stays off until an admin confirms it.
           </p>
         </div>
         <div className="card p-5">
@@ -58,10 +66,58 @@ function Login() {
               </div>
               <form className="space-y-3" onSubmit={submit}>
                 {mode === "up" ? (
-                  <label className="block text-sm">
-                    Name
-                    <input className="field mt-1" value={name} onChange={(e) => setName(e.target.value)} required />
-                  </label>
+                  <>
+                    <label className="block text-sm">
+                      Name
+                      <input className="field mt-1" value={name} onChange={(e) => setName(e.target.value)} required />
+                    </label>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <button
+                        type="button"
+                        className={kind === "tandem" ? "btn" : "btn btn-ghost"}
+                        onClick={() => setKind("tandem")}
+                      >
+                        Tandem
+                        <span className="mt-1 block text-xs font-normal">Student jump</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={kind === "fun_jumper" ? "btn" : "btn btn-ghost"}
+                        onClick={() => setKind("fun_jumper")}
+                      >
+                        Fun jumper
+                        <span className="mt-1 block text-xs font-normal">USPA licensed skydiver</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={staff ? "btn" : "btn btn-ghost"}
+                        onClick={() => setKind((current) => (current === "tandem" || current === "fun_jumper" ? "instructor" : current))}
+                      >
+                        Staff
+                        <span className="mt-1 block text-xs font-normal">Needs admin confirmation</span>
+                      </button>
+                    </div>
+                    {staff ? (
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        {(
+                          [
+                            ["instructor", "Tandem instructor"],
+                            ["pilot", "Pilot"],
+                            ["manifest", "Manifest"],
+                          ] as const
+                        ).map(([value, label]) => (
+                          <button
+                            key={value}
+                            type="button"
+                            className={kind === value ? "btn" : "btn btn-ghost"}
+                            onClick={() => setKind(value)}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
                 ) : null}
                 <label className="block text-sm">
                   Email
