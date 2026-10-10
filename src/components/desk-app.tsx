@@ -1183,21 +1183,39 @@ function ProfileEditor({
         <input className="field mt-1" type="date" value={form.waiverSignedOn} onChange={(e) => set("waiverSignedOn", e.target.value)} />
       </label>
       <div className="grid gap-3 md:grid-cols-3">
-        <input className="field" placeholder="Emergency name" value={form.emergencyName} onChange={(e) => set("emergencyName", e.target.value)} />
-        <input className="field" placeholder="Relationship" value={form.emergencyRelationship} onChange={(e) => set("emergencyRelationship", e.target.value)} />
-        <input className="field" placeholder="Emergency phone" value={form.emergencyPhone} onChange={(e) => set("emergencyPhone", e.target.value)} />
+        <label className="block text-sm">
+          Emergency Contact Name
+          <input className="field mt-1" value={form.emergencyName} onChange={(e) => set("emergencyName", e.target.value)} />
+        </label>
+        <label className="block text-sm">
+          Relationship
+          <input className="field mt-1" value={form.emergencyRelationship} onChange={(e) => set("emergencyRelationship", e.target.value)} />
+        </label>
+        <label className="block text-sm">
+          Emergency Contact Number
+          <input className="field mt-1" value={form.emergencyPhone} onChange={(e) => set("emergencyPhone", e.target.value)} />
+        </label>
       </div>
       {rig ? (
         <div className="grid gap-3 md:grid-cols-2">
-          <input className="field" placeholder="USPA license number" value={form.uspaLicense} onChange={(e) => set("uspaLicense", e.target.value)} />
-          <input className="field" placeholder="Ratings held" value={form.uspaRatings} onChange={(e) => set("uspaRatings", e.target.value)} />
-          <input className="field" placeholder="USPA membership number" value={form.uspaMemberNumber} onChange={(e) => set("uspaMemberNumber", e.target.value)} />
+          <label className="block text-sm">
+            USPA License Number
+            <input className="field mt-1" value={form.uspaLicense} onChange={(e) => set("uspaLicense", e.target.value)} />
+          </label>
+          <label className="block text-sm">
+            USPA Ratings Held
+            <input className="field mt-1" value={form.uspaRatings} onChange={(e) => set("uspaRatings", e.target.value)} />
+          </label>
+          <label className="block text-sm">
+            USPA Membership Number
+            <input className="field mt-1" value={form.uspaMemberNumber} onChange={(e) => set("uspaMemberNumber", e.target.value)} />
+          </label>
           <label className="text-sm">
-            Membership expires
+            USPA Membership Expires
             <input className="field mt-1" type="date" value={form.uspaMemberExpires} onChange={(e) => set("uspaMemberExpires", e.target.value)} />
           </label>
           <label className="text-sm">
-            Reserve repack
+            Reserve Repack Date
             <input className="field mt-1" type="date" value={form.reserveRepackOn} onChange={(e) => set("reserveRepackOn", e.target.value)} />
           </label>
           <p className="self-end text-sm text-muted">
