@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { TriangleAlert } from "lucide-react";
 
@@ -9,7 +10,35 @@ function errorMessage(error: unknown): string {
   return FALLBACK_MESSAGE;
 }
 
+function staleChunk(error: unknown) {
+  const message = errorMessage(error);
+  return (
+    message.startsWith("Failed to fetch dynamically imported module") ||
+    message.startsWith("error loading dynamically imported module") ||
+    message.startsWith("Importing a module script failed")
+  );
+}
+
+function reloadFresh() {
+  for (const key of Object.keys(sessionStorage)) {
+    if (key.startsWith("tanstack_router_reload:")) sessionStorage.removeItem(key);
+  }
+  sessionStorage.removeItem("sst-chunk-retry");
+  window.location.reload();
+}
+
 export function AppErrorComponent({ error }: ErrorComponentProps) {
+  const chunk = staleChunk(error);
+  useEffect(() => {
+    if (!chunk) return;
+    if (sessionStorage.getItem("sst-chunk-retry") === "1") return;
+    sessionStorage.setItem("sst-chunk-retry", "1");
+    for (const key of Object.keys(sessionStorage)) {
+      if (key.startsWith("tanstack_router_reload:")) sessionStorage.removeItem(key);
+    }
+    window.location.reload();
+  }, [chunk]);
+
   return (
     <main
       className={
@@ -22,8 +51,11 @@ export function AppErrorComponent({ error }: ErrorComponentProps) {
       </span>
       <h1 className="text-lg font-semibold">Something went wrong</h1>
       <p className="max-w-md text-sm break-words text-zinc-500 dark:text-zinc-400">
-        {errorMessage(error)}
+        {chunk ? "The load clock was updating. Reload the page to open the new one." : errorMessage(error)}
       </p>
+      <button type="button" className="mt-2 rounded-md bg-zinc-900 px-4 py-2 text-sm text-white" onClick={reloadFresh}>
+        Reload
+      </button>
     </main>
   );
 }

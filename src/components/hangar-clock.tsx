@@ -193,7 +193,7 @@ export function HangarClock({ date }: { date: string }) {
   const timeColor = !timerOn || remain == null ? "#ffffff" : remain <= 0 ? "#ff2222" : remain <= 60 ? "#ff4444" : "#ffffff";
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#003399] text-white">
+    <div className="fixed inset-0 overflow-hidden bg-[#003399] text-white" data-board="hangar">
       <div className="flex h-full min-h-0 flex-col">
         <h1 className="shrink-0 py-2 text-center font-['Oswald',sans-serif] text-4xl tracking-wide text-[#00ff88] xl:text-5xl">
           SKYDIVE SOUTH TEXAS
