@@ -194,81 +194,80 @@ export function HangarClock({ date }: { date: string }) {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#003399] text-white">
-      <div className="grid h-full grid-cols-[minmax(0,5fr)_minmax(0,6fr)_minmax(0,6fr)] grid-rows-[auto_minmax(0,1fr)_minmax(0,1fr)]">
-        <h1 className="col-start-2 py-2 text-center font-['Oswald',sans-serif] text-4xl tracking-wide text-[#00ff88] xl:text-5xl">
+      <div className="flex h-full min-h-0 flex-col">
+        <h1 className="shrink-0 py-2 text-center font-['Oswald',sans-serif] text-4xl tracking-wide text-[#00ff88] xl:text-5xl">
           SKYDIVE SOUTH TEXAS
         </h1>
-
-        <div className="flex min-h-0 items-center justify-center px-3">
-          <img src="/clock/sstlogo.png" alt="Skydive South Texas" className="max-h-full max-w-full object-contain" />
-        </div>
-
-        <div className="flex min-h-0 flex-col items-center justify-center px-3 text-center">
-          <p className="font-['Courier_New',monospace] text-2xl text-[#00ccff] xl:text-3xl">{clock}</p>
-          <p className="mt-3 text-xl font-bold text-[#cccccc]">{current ? `Load ${current.loadNumber} Call` : "Load Call"}</p>
-          {timerOn ? (
-            <p className="mt-2 font-['Courier_New',monospace] text-7xl font-bold tabular-nums xl:text-8xl" style={{ color: timeColor }}>
-              {timeText}
-            </p>
-          ) : null}
-          <p className="mt-1 min-h-5 text-sm font-bold text-[#ff2222]">{status}</p>
-          {error ? <p className="mt-1 max-w-sm text-sm text-[#ff8888]">{error}</p> : null}
-          <div className="mt-2 flex flex-wrap justify-center gap-2">
-            <ClockButton
-              color={timerOn ? "#00ff88" : "#ff8888"}
-              onClick={() => {
-                setTimerOn((on) => {
-                  const next = !on;
-                  if (next) {
-                    pinnedRef.current = false;
-                    markIfAlreadyZero();
-                    if (zeroSinceRef.current != null) pinnedRef.current = true;
-                  } else setStatus("");
-                  return next;
-                });
-              }}
-            >
-              {timerOn ? "TIMER: ON" : "TIMER: OFF"}
-            </ClockButton>
-            <ClockButton color="#00ccff" onClick={() => go(-1)}>
-              ◀ PREV
-            </ClockButton>
-            <ClockButton color="#00ccff" onClick={() => go(1)}>
-              NEXT ▶
-            </ClockButton>
-            <ClockButton color="#00ccff" onClick={() => void toggleFull()}>
-              {full ? "WINDOW" : "FULL"}
-            </ClockButton>
+        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1.2fr)]">
+          <div className="flex min-h-0 flex-col px-3 pb-3">
+            <img src="/clock/sstlogo.png" alt="Skydive South Texas" className="mx-auto h-auto max-h-[22vh] w-auto max-w-full object-contain" />
+            <div className="mt-2 min-h-0 flex-1">
+              <img
+                src="/clock/portasatview.png"
+                alt="Mustang Island from above"
+                className="h-full w-full rounded-sm border border-[#00ccff] object-contain"
+              />
+            </div>
           </div>
-          {counting ? null : <p className="sr-only">Countdown {timeText}</p>}
+
+          <div className="flex min-h-0 flex-col">
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-3 text-center">
+              <p className="font-['Courier_New',monospace] text-2xl text-[#00ccff] xl:text-3xl">{clock}</p>
+              <p className="mt-3 text-xl font-bold text-[#cccccc]">{current ? `Load ${current.loadNumber} Call` : "Load Call"}</p>
+              {timerOn ? (
+                <p className="mt-2 font-['Courier_New',monospace] text-7xl font-bold tabular-nums xl:text-8xl" style={{ color: timeColor }}>
+                  {timeText}
+                </p>
+              ) : null}
+              <p className="mt-1 min-h-5 text-sm font-bold text-[#ff2222]">{status}</p>
+              {error ? <p className="mt-1 max-w-sm text-sm text-[#ff8888]">{error}</p> : null}
+              <div className="mt-2 flex flex-wrap justify-center gap-2">
+                <ClockButton
+                  color={timerOn ? "#00ff88" : "#ff8888"}
+                  onClick={() => {
+                    setTimerOn((on) => {
+                      const next = !on;
+                      if (next) {
+                        pinnedRef.current = false;
+                        markIfAlreadyZero();
+                        if (zeroSinceRef.current != null) pinnedRef.current = true;
+                      } else setStatus("");
+                      return next;
+                    });
+                  }}
+                >
+                  {timerOn ? "TIMER: ON" : "TIMER: OFF"}
+                </ClockButton>
+                <ClockButton color="#00ccff" onClick={() => go(-1)}>
+                  ◀ PREV
+                </ClockButton>
+                <ClockButton color="#00ccff" onClick={() => go(1)}>
+                  NEXT ▶
+                </ClockButton>
+                <ClockButton color="#00ccff" onClick={() => void toggleFull()}>
+                  {full ? "WINDOW" : "FULL"}
+                </ClockButton>
+              </div>
+              {counting ? null : <p className="sr-only">Countdown {timeText}</p>}
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-3 pb-3">
+              <p className="text-sm font-bold text-[#00ccff] xl:text-base">WINDS & TEMP — PORT ARANSAS</p>
+              <p className="text-xs text-[#88aacc]">(arrows point downwind)</p>
+              <p className="mb-2 text-[11px] text-[#88aacc]">Last update: {updated}</p>
+              {ALTS.map((alt) => (
+                <p key={alt} className="whitespace-nowrap font-['Courier_New',monospace] text-sm text-white xl:text-lg">
+                  <span className="inline-block w-28 text-right text-[#cccccc]">{alt}:</span> {winds[alt]}
+                </p>
+              ))}
+              <p className="mt-2 whitespace-nowrap font-['Courier_New',monospace] text-sm xl:text-base">
+                <span className="text-[#cccccc]">Sunset today:</span> <span className="text-[#00ff88]">{sunset}</span>
+              </p>
+              <p className="mt-2 text-[10px] text-[#6688bb]">Data source: Open-Meteo</p>
+            </div>
+          </div>
+
+          <CardColumn loads={shown} />
         </div>
-
-        <CardColumn loads={[shown[0], shown[1]]} />
-
-        <div className="flex min-h-0 items-center justify-center px-3 pb-3">
-          <img
-            src="/clock/portasatview.png"
-            alt="Mustang Island from above"
-            className="max-h-full max-w-full rounded-sm border border-[#00ccff] object-contain"
-          />
-        </div>
-
-        <div className="flex min-h-0 flex-col items-center justify-center px-2 pb-2">
-          <p className="text-sm font-bold text-[#00ccff] xl:text-base">WINDS & TEMP — PORT ARANSAS</p>
-          <p className="text-xs text-[#88aacc]">(arrows point downwind)</p>
-          <p className="mb-2 text-[11px] text-[#88aacc]">Last update: {updated}</p>
-          {ALTS.map((alt) => (
-            <p key={alt} className="font-['Courier_New',monospace] text-sm text-white xl:text-lg">
-              <span className="inline-block w-24 text-right text-[#cccccc]">{alt}:</span> {winds[alt]}
-            </p>
-          ))}
-          <p className="mt-2 font-['Courier_New',monospace] text-sm xl:text-base">
-            <span className="text-[#cccccc]">Sunset today:</span> <span className="text-[#00ff88]">{sunset}</span>
-          </p>
-          <p className="mt-2 text-[10px] text-[#6688bb]">Data source: Open-Meteo</p>
-        </div>
-
-        <CardColumn loads={[shown[2], shown[3]]} />
       </div>
 
       {plane ? (
@@ -297,7 +296,7 @@ function CardColumn({ loads }: { loads: Array<Load | null> }) {
 function LoadCard({ load }: { load: Load | null }) {
   const rows = load ? jumperRows(load) : [];
   return (
-    <article className="min-h-0 overflow-auto rounded-sm border-2 border-[#00ccff] bg-[#001a4d] px-3 py-2">
+    <article className="min-h-0 flex-1 overflow-auto rounded-sm border-2 border-[#00ccff] bg-[#001a4d] px-3 py-2">
       {!load ? (
         <p className="py-4 text-center text-sm text-[#cccccc]">— no load —</p>
       ) : (
