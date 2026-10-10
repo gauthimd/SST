@@ -933,65 +933,6 @@ function AccountsPanel({
 
   return (
     <div className="mt-6 space-y-4">
-      <form
-        className="card grid gap-3 p-4 md:grid-cols-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void run(() => createPerson({ data: { kind, name, email, phone, notes: "" } }));
-        }}
-      >
-        <h2 className="text-2xl md:col-span-2">New account</h2>
-        <select className="field" value={kind} onChange={(e) => setKind(e.target.value)}>
-          <option value="tandem">Tandem student</option>
-          <option value="fun_jumper">Fun jumper (USPA licensed skydiver)</option>
-          <option value="instructor">Tandem instructor</option>
-          <option value="pilot">Pilot</option>
-          <option value="crew">Manifest</option>
-        </select>
-        <input className="field" placeholder="Name" required value={name} onChange={(e) => setName(e.target.value)} />
-        <input className="field" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input className="field" placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        <button className="btn w-fit" disabled={busy}>
-          Create
-        </button>
-      </form>
-      <form
-        className="card grid gap-3 p-4 md:grid-cols-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void run(() =>
-            fundWallet({
-              data: { personId: Number(personId), amountCents: Math.round(Number(amount) * 100), method: "stripe_test", card },
-            }),
-          );
-        }}
-      >
-        <h2 className="text-2xl md:col-span-2">Add jumper money</h2>
-        <p className="text-sm text-muted md:col-span-2">
-          {moneyPerson ? moneyPerson.name : "Search for a fun jumper below, then add money."}
-        </p>
-        <input className="field" value={amount} onChange={(e) => setAmount(e.target.value)} />
-        <input className="field md:col-span-2" placeholder="4242 4242 4242 4242" value={card} onChange={(e) => setCard(e.target.value)} />
-        <div className="flex flex-wrap gap-2 md:col-span-2">
-          <button className="btn" disabled={busy || !moneyPerson}>
-            Test-card top-up
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            disabled={busy || !moneyPerson}
-            onClick={() =>
-              run(() =>
-                spendWallet({
-                  data: { personId: Number(personId), amountCents: FUN_JUMP_CENTS, note: "Jump ticket" },
-                }),
-              )
-            }
-          >
-            Take a {money(FUN_JUMP_CENTS)} jump ticket
-          </button>
-        </div>
-      </form>
       <div className="space-y-2">
         <label className="block text-sm">
           Find an account
@@ -1061,6 +1002,65 @@ function AccountsPanel({
       {desk.people.find((p) => String(p.id) === selected) ? (
         <ProfileEditor person={desk.people.find((p) => String(p.id) === selected)!} busy={busy} run={run} date={date} />
       ) : null}
+      <form
+        className="card grid gap-3 p-4 md:grid-cols-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void run(() => createPerson({ data: { kind, name, email, phone, notes: "" } }));
+        }}
+      >
+        <h2 className="text-2xl md:col-span-2">New account</h2>
+        <select className="field" value={kind} onChange={(e) => setKind(e.target.value)}>
+          <option value="tandem">Tandem student</option>
+          <option value="fun_jumper">Fun jumper (USPA licensed skydiver)</option>
+          <option value="instructor">Tandem instructor</option>
+          <option value="pilot">Pilot</option>
+          <option value="crew">Manifest</option>
+        </select>
+        <input className="field" placeholder="Name" required value={name} onChange={(e) => setName(e.target.value)} />
+        <input className="field" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input className="field" placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <button className="btn w-fit" disabled={busy}>
+          Create
+        </button>
+      </form>
+      <form
+        className="card grid gap-3 p-4 md:grid-cols-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void run(() =>
+            fundWallet({
+              data: { personId: Number(personId), amountCents: Math.round(Number(amount) * 100), method: "stripe_test", card },
+            }),
+          );
+        }}
+      >
+        <h2 className="text-2xl md:col-span-2">Add jumper money</h2>
+        <p className="text-sm text-muted md:col-span-2">
+          {moneyPerson ? moneyPerson.name : "Search for a fun jumper above, then add money."}
+        </p>
+        <input className="field" value={amount} onChange={(e) => setAmount(e.target.value)} />
+        <input className="field md:col-span-2" placeholder="4242 4242 4242 4242" value={card} onChange={(e) => setCard(e.target.value)} />
+        <div className="flex flex-wrap gap-2 md:col-span-2">
+          <button className="btn" disabled={busy || !moneyPerson}>
+            Test-card top-up
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            disabled={busy || !moneyPerson}
+            onClick={() =>
+              run(() =>
+                spendWallet({
+                  data: { personId: Number(personId), amountCents: FUN_JUMP_CENTS, note: "Jump ticket" },
+                }),
+              )
+            }
+          >
+            Take a {money(FUN_JUMP_CENTS)} jump ticket
+          </button>
+        </div>
+      </form>
       {admin && desk.staffRequests.length > 0 ? (
         <section className="card space-y-3 p-4">
           <h2 className="text-2xl">Staff waiting for confirmation</h2>
