@@ -396,7 +396,7 @@ function jumperRows(load: Load): JumperRow[] {
       const notes = slot.jumpType === "beach" ? "Beach" : slot.jumpType === "sunset" ? "Sunset" : "";
       return [{ name: displayName(slot.personName), ti: displayName(slot.instructorName), video: mediaMark(slot.media), notes }];
     }
-    if (slot.role === "fun_jumper") return [{ name: displayName(slot.personName), ti: "", video: "N", notes: "FJ" }];
+    if (slot.role === "fun_jumper") return [{ name: displayName(slot.personName), ti: "", video: "", notes: "FJ" }];
     return [];
   });
 }
