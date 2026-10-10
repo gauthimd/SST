@@ -732,6 +732,50 @@ export const addSlot = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const removeSlot = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((input: { slotId: number }) => ({ slotId: n(input.slotId) }))
+  .handler(async ({ context, data }) => {
+    await requireStaff(context.userId);
+    const sql = await getSql();
+    const slots = await sql<{
+      id: unknown;
+      load_id: unknown;
+      person_id: unknown;
+      role: unknown;
+      status: unknown;
+      person_name: unknown;
+    }>`
+      select s.id, s.load_id, s.person_id, s.role, l.status, p.name as person_name
+      from slots s
+      join loads l on l.id = s.load_id
+      join people p on p.id = s.person_id
+      where s.id = ${data.slotId}
+    `;
+    const slot = slots[0];
+    if (!slot) throw new Error("That person is already off the load");
+    if (s(slot.status) === "airborne" || s(slot.status) === "landed") {
+      throw new Error("The plane is already airborne. You can't take someone off this load.");
+    }
+    if (s(slot.role) === "instructor") {
+      const student = await sql<{ id: unknown }>`
+        select id from slots
+        where load_id = ${n(slot.load_id)} and role = 'tandem' and instructor_id = ${n(slot.person_id)}
+        limit 1
+      `;
+      if (student[0]) throw new Error(`Take ${s(slot.person_name)}'s tandem student off the load first`);
+    }
+    await sql`delete from slots where id = ${data.slotId}`;
+    await audit(
+      context.userId,
+      "remove_slot",
+      "slot",
+      String(data.slotId),
+      `${s(slot.person_name)} off load ${n(slot.load_id)}`,
+    );
+    return { ok: true };
+  });
+
 type NewBooking = {
   personId: number;
   productId: string;

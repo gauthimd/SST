@@ -17,6 +17,7 @@ import {
   listJumps,
   loadDesk,
   openMyAccount,
+  removeSlot,
   seedPractice,
   setBookingStatus,
   setLoadPlan,
@@ -577,8 +578,20 @@ function LoadCard({
       </form>
       <ul className="mt-3 space-y-1 text-sm">
         {load.slots.map((slot) => (
-          <li key={slot.id}>
-            {slot.personName} <span className="text-muted">· {slotLabel(slot)}</span>
+          <li key={slot.id} className="flex items-center justify-between gap-3">
+            <span>
+              {slot.personName} <span className="text-muted">· {slotLabel(slot)}</span>
+            </span>
+            {(load.status === "open" || load.status === "boarding") ? (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={busy}
+                onClick={() => run(() => removeSlot({ data: { slotId: slot.id } }))}
+              >
+                Remove
+              </button>
+            ) : null}
           </li>
         ))}
         {load.slots.length === 0 ? <li className="text-muted">Empty load</li> : null}
