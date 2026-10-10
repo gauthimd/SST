@@ -633,6 +633,17 @@ export const addSlot = createServerFn({ method: "POST" })
       select person_id, role, instructor_id from slots where load_id = ${data.loadId}
     `;
     if (seated.some((slot) => n(slot.person_id) === data.personId)) throw new Error(`${person.name} is already on this load`);
+    const elsewhere = await sql<{ id: unknown }>`
+      select l.id
+      from slots s
+      join loads l on l.id = s.load_id
+      where l.jump_date = ${jumpDate}
+        and l.status <> 'landed'
+        and l.id <> ${data.loadId}
+        and s.person_id = ${data.personId}
+      limit 1
+    `;
+    if (elsewhere[0]) throw new Error(`${person.name} is already on a load`);
     if (data.role === "videographer") {
       throw new Error("Video rides with the tandem instructor. It is not another seat.");
     }
@@ -663,6 +674,18 @@ export const addSlot = createServerFn({ method: "POST" })
         throw new Error(`${instructor.name} already has a student on this load`);
       }
       const instructorOnLoad = seated.some((slot) => n(slot.person_id) === data.instructorId);
+      if (!instructorOnLoad) {
+        const instructorElsewhere = await sql<{ id: unknown }>`
+          select l.id
+          from slots s
+          join loads l on l.id = s.load_id
+          where l.jump_date = ${jumpDate}
+            and l.status <> 'landed'
+            and s.person_id = ${data.instructorId}
+          limit 1
+        `;
+        if (instructorElsewhere[0]) throw new Error(`${instructor.name} is already on a load`);
+      }
       const next = afterAdd(counts, instructorOnLoad ? "tandem" : "tandem_with_instructor");
       if (!canFinish(next)) throw new Error(seatRefusal(counts));
       instructorId = data.instructorId;
