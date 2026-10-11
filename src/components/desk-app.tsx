@@ -473,7 +473,11 @@ function LoadCard({
   const [instructorId, setInstructorId] = useState("");
   const [jumpType, setJumpType] = useState("regular");
   const [media, setMedia] = useState("none");
+  const [expanded, setExpanded] = useState(load.status !== "landed");
   const [, setTick] = useState(0);
+  useEffect(() => {
+    setExpanded(load.status !== "landed");
+  }, [load.status]);
   useEffect(() => {
     const t = window.setInterval(() => setTick((n) => n + 1), 1000);
     return () => window.clearInterval(t);
@@ -530,14 +534,23 @@ function LoadCard({
           Load {load.loadNumber}
           <span className="text-sea"> · {load.callTime || "no takeoff"}</span>
         </h2>
-        <p className="text-sm uppercase tracking-wide text-muted">{load.status}</p>
+        <div className="flex items-center gap-3">
+          {load.status === "landed" ? (
+            <button type="button" className="text-sm text-sea" onClick={() => setExpanded((open) => !open)}>
+              {expanded ? "Hide" : "Show"}
+            </button>
+          ) : null}
+          <p className="text-sm uppercase tracking-wide text-muted">{load.status}</p>
+        </div>
       </div>
       <p className="mt-1 text-sm text-muted">
         {altitudeLabel(load.altitudeFt)}
         {load.tailNumber ? ` · ${load.tailNumber}` : ""}
-        {load.pilotName ? ` · ${load.pilotName}` : " · no pilot"}
+        {load.pilotName ? ` · Pilot ${plainName(load.pilotName)}` : " · no pilot"}
         {(load.status === "open" || load.status === "boarding") && load.callTime ? ` · ${countdown(load.callTime)}` : ""}
       </p>
+      {expanded ? (
+      <>
       <form
         className="mt-3 grid gap-2 md:grid-cols-4"
         onSubmit={(e) => {
@@ -568,7 +581,7 @@ function LoadCard({
           <option value="">Pilot checked in</option>
           {pilots.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.name}
+              {plainName(p.name)}
             </option>
           ))}
         </select>
@@ -672,8 +685,14 @@ function LoadCard({
           </button>
         ))}
       </div>
+      </>
+      ) : null}
     </article>
   );
+}
+
+function plainName(name: string) {
+  return name.replace(/^Practice\s*·\s*/, "").trim();
 }
 
 function optionLabel(person: Person, desk: Desk) {
