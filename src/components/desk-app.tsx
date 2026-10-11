@@ -19,6 +19,7 @@ import {
   openMyAccount,
   removeSlot,
   seedPractice,
+  setBeachCleared,
   setBookingStatus,
   setLoadPlan,
   setLoadStatus,
@@ -1256,7 +1257,7 @@ function ProfileEditor({
               notes: form.notes,
               nojump: form.nojump,
               nojumpNote: form.nojumpNote,
-              beachCleared: person.kind === "fun_jumper" ? form.beachCleared : false,
+              beachCleared: form.beachCleared,
             },
           }),
         );
@@ -1329,7 +1330,12 @@ function ProfileEditor({
               type="checkbox"
               className="h-4 w-4 accent-green-600"
               checked={form.beachCleared}
-              onChange={(e) => set("beachCleared", e.target.checked)}
+              disabled={busy}
+              onChange={(e) => {
+                const cleared = e.target.checked;
+                set("beachCleared", cleared);
+                void run(() => setBeachCleared({ data: { id: person.id, cleared } }));
+              }}
             />
             Cleared for Beach Landings
           </label>

@@ -1221,6 +1221,28 @@ export const updatePerson = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const setBeachCleared = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((input: { id: number; cleared: boolean }) => ({
+    id: n(input.id),
+    cleared: input.cleared === true,
+  }))
+  .handler(async ({ context, data }) => {
+    await requireStaff(context.userId);
+    const sql = await getSql();
+    const rows = await sql<{ kind: unknown }>`select kind from people where id = ${data.id}`;
+    if (s(rows[0]?.kind) !== "fun_jumper") throw new Error("Beach clearance is only for fun jumpers");
+    await sql`update people set beach_cleared = ${data.cleared} where id = ${data.id}`;
+    await audit(
+      context.userId,
+      "update_person",
+      "person",
+      String(data.id),
+      data.cleared ? "Cleared for beach landings" : "Beach landing clearance removed",
+    );
+    return { ok: true };
+  });
+
 export const toggleCheckin = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((input: { personId: number; date: string; on: boolean; funJump?: boolean }) => ({
