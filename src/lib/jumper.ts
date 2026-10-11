@@ -44,6 +44,19 @@ export function reserveExpires(repack: string) {
   return addDays(repack, 180);
 }
 
+export function daysUntil(iso: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const [y, m, d] = iso.split("-").map(Number);
+  const [ty, tm, td] = today.split("-").map(Number);
+  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(ty, tm - 1, td)) / 86400000);
+}
+
 type JumpPerson = {
   kind: string;
   nojump: boolean;

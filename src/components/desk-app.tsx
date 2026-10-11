@@ -35,7 +35,7 @@ import {
   type Me,
   type Person,
 } from "@/lib/dz";
-import { ALTITUDES, TAILS, jumpBlocker, reserveExpires, takeoffProblem, waiverCurrent } from "@/lib/jumper";
+import { ALTITUDES, TAILS, daysUntil, jumpBlocker, reserveExpires, takeoffProblem, waiverCurrent } from "@/lib/jumper";
 import { afterAdd, canFinish, isFull, passengerCount, seatCounts } from "@/lib/load-capacity";
 
 function errText(e: unknown) {
@@ -719,6 +719,16 @@ function latestPlane(loads: Load[]) {
   return last?.tailNumber || TAILS[0];
 }
 
+function daysLeft(exp: string) {
+  const days = daysUntil(exp);
+  if (days == null) return "";
+  if (days > 1) return `${days} days remaining`;
+  if (days === 1) return "1 day remaining";
+  if (days === 0) return "due today";
+  if (days === -1) return "1 day overdue";
+  return `${-days} days overdue`;
+}
+
 function plainName(name: string) {
   return name.replace(/^Practice\s*·\s*/, "").trim();
 }
@@ -1302,7 +1312,7 @@ function ProfileEditor({
             {person.kind === "instructor"
               ? "Company gear covers a tandem load. A reserve date is required only when they fun jump."
               : exp
-                ? `Reserve expires ${exp} (180 days)`
+                ? `Reserve expires ${exp} (${daysLeft(exp)})`
                 : "No repack date yet"}
             {person.kind === "instructor" && exp ? ` On file: expires ${exp}.${exp < date ? " That date is expired, so they cannot fun jump." : ""}` : ""}
           </p>
