@@ -560,10 +560,28 @@ export const createLoad = createServerFn({ method: "POST" })
       [data.date],
     );
     const loadNumber = n(max[0]?.n) + 1;
+    const previous = await sql.query<{ pilot_id: unknown }>(
+      `select pilot_id from loads
+       where jump_date = $1 and pilot_id is not null
+       order by load_number desc
+       limit 1`,
+      [data.date],
+    );
+    let pilotId: number | null = n(previous[0]?.pilot_id) || null;
+    if (pilotId) {
+      const checked = await sql.query(
+        `select c.person_id
+         from checkins c
+         join people p on p.id = c.person_id
+         where c.person_id = $1 and c.jump_date = $2 and p.kind = 'pilot'`,
+        [pilotId, data.date],
+      );
+      if (!checked[0]) pilotId = null;
+    }
     const rows = await sql.query<{ id: unknown }>(
-      `insert into loads (jump_date, load_number, call_time, altitude_ft, tail_number, notes, created_by)
-       values ($1, $2, $3, $4, $5, '', $6) returning id`,
-      [data.date, loadNumber, data.callTime, data.altitudeFt, data.tailNumber, context.userId],
+      `insert into loads (jump_date, load_number, call_time, altitude_ft, tail_number, pilot_id, notes, created_by)
+       values ($1, $2, $3, $4, $5, $6, '', $7) returning id`,
+      [data.date, loadNumber, data.callTime, data.altitudeFt, data.tailNumber, pilotId, context.userId],
     );
     const id = n(rows[0]?.id);
     await audit(
@@ -1236,7 +1254,7 @@ export const setLoadPlan = createServerFn({ method: "POST" })
     const loads = await sql<{ jump_date: unknown }>`select jump_date::text as jump_date from loads where id = ${data.id}`;
     const jumpDate = day(loads[0]?.jump_date);
     if (!jumpDate) throw new Error("Load not found");
-    if (!data.pilotId) throw new Error("Pick a pilot");
+    if (!data.pilotId) throw new Error("Pick a pilot before this load can be saved.");
     const timeProblem = takeoffProblem(jumpDate, data.callTime);
     if (timeProblem) throw new Error(timeProblem);
     let pilotId: number | null = null;

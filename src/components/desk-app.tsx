@@ -537,7 +537,7 @@ function LoadCard({
     return true;
   });
 
-  const planProblem = !pilotId ? "Pick a pilot" : takeoffProblem(date, callTime);
+  const planProblem = !pilotId ? "Pick a pilot before this load can be saved." : takeoffProblem(date, callTime);
 
   return (
     <article className="card p-4">
@@ -598,10 +598,10 @@ function LoadCard({
             </option>
           ))}
         </select>
-        <button className="btn w-fit" disabled={busy || Boolean(planProblem)}>
+        <button className="btn w-fit" disabled={busy}>
           Save load
         </button>
-        {planProblem ? <p className="text-sm text-muted md:col-span-3">{planProblem}</p> : null}
+        {planProblem ? <p className="text-sm font-semibold text-coral md:col-span-4">{planProblem}</p> : null}
       </form>
       <ul className="mt-3 space-y-1 text-sm">
         {load.slots.map((slot) => (
