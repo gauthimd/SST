@@ -401,9 +401,13 @@ function LoadsPanel({
   run: (fn: () => Promise<unknown>) => Promise<void>;
   date: string;
 }) {
+  const savedPlane = latestPlane(desk.loads);
   const [callTime, setCallTime] = useState("10:00");
   const [altitudeFt, setAltitudeFt] = useState(10000);
-  const [tailNumber, setTailNumber] = useState<string>(TAILS[0]);
+  const [tailNumber, setTailNumber] = useState(savedPlane);
+  useEffect(() => {
+    setTailNumber(savedPlane);
+  }, [date, savedPlane]);
 
   return (
     <div className="mt-6 space-y-4">
@@ -445,7 +449,7 @@ function LoadsPanel({
       </form>
       {desk.loads.length === 0 ? <p className="text-muted">No loads this day. Add one, or drop in a practice day.</p> : null}
       {desk.loads.map((load) => (
-        <LoadCard key={load.id} load={load} desk={desk} date={date} busy={busy} run={run} />
+        <LoadCard key={load.id} load={load} desk={desk} date={date} busy={busy} run={run} onPlane={setTailNumber} />
       ))}
     </div>
   );
@@ -457,12 +461,14 @@ function LoadCard({
   date,
   busy,
   run,
+  onPlane,
 }: {
   load: Load;
   desk: Desk;
   date: string;
   busy: boolean;
   run: (fn: () => Promise<unknown>) => Promise<void>;
+  onPlane: (tail: string) => void;
   }) {
   const [callTime, setCallTime] = useState(load.callTime || "10:00");
   const [altitudeFt, setAltitudeFt] = useState(load.altitudeFt || 10000);
@@ -577,7 +583,7 @@ function LoadCard({
             </option>
           ))}
         </select>
-        <select className="field" value={tailNumber} onChange={(e) => setTailNumber(e.target.value)}>
+        <select className="field" value={tailNumber} onChange={(e) => { setTailNumber(e.target.value); onPlane(e.target.value); }}>
           {TAILS.map((tail) => (
             <option key={tail} value={tail}>
               {tail}
@@ -696,6 +702,11 @@ function LoadCard({
       ) : null}
     </article>
   );
+}
+
+function latestPlane(loads: Load[]) {
+  const last = loads.reduce<Load | null>((best, load) => (!best || load.loadNumber >= best.loadNumber ? load : best), null);
+  return last?.tailNumber || TAILS[0];
 }
 
 function plainName(name: string) {
