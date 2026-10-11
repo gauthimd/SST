@@ -702,9 +702,10 @@ export const addSlot = createServerFn({ method: "POST" })
           where l.jump_date = ${jumpDate}
             and l.status <> 'landed'
             and s.person_id = ${data.instructorId}
+            and s.role = 'fun_jumper'
           limit 1
         `;
-        if (instructorElsewhere[0]) throw new Error(`${instructor.name} is already on a load`);
+        if (instructorElsewhere[0]) throw new Error(`${instructor.name} is still a fun jumper on a load that has not landed`);
       }
       const next = afterAdd(counts, instructorOnLoad ? "tandem" : "tandem_with_instructor");
       if (!canFinish(next)) throw new Error(seatRefusal(counts));

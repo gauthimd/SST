@@ -508,8 +508,13 @@ function LoadCard({
     load.slots.flatMap((slot) => [slot.role === "instructor" ? slot.personId : 0, slot.instructorId]).filter((id) => id > 0),
   );
   const funJumpingThisLoad = new Set(load.slots.filter((slot) => slot.role === "fun_jumper").map((slot) => slot.personId));
+  const funJumpingElsewhere = new Set(
+    desk.loads
+      .filter((item) => item.id !== load.id && item.status !== "landed")
+      .flatMap((item) => item.slots.filter((slot) => slot.role === "fun_jumper").map((slot) => slot.personId)),
+  );
   const tandemInstructors = instructors.filter((person) => {
-    if (pairedInstructorIds.has(person.id) || onAnotherLoad.has(person.id) || funJumpingThisLoad.has(person.id)) return false;
+    if (pairedInstructorIds.has(person.id) || funJumpingThisLoad.has(person.id) || funJumpingElsewhere.has(person.id)) return false;
     if (onThisLoad.has(person.id) && !instructorIdsOnLoad.has(person.id)) return false;
     if (instructorIdsOnLoad.has(person.id)) return true;
     return newPairFits;
