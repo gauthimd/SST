@@ -28,6 +28,7 @@ export type Person = {
   reserveRepackOn: string;
   nojump: boolean;
   nojumpNote: string;
+  beachCleared: boolean;
 };
 
 export type Booking = {
@@ -220,6 +221,7 @@ function mapPerson(row: {
   reserve_repack_on: unknown;
   nojump: unknown;
   nojump_note: unknown;
+  beach_cleared: unknown;
 }): Person {
   return {
     id: n(row.id),
@@ -241,6 +243,7 @@ function mapPerson(row: {
     reserveRepackOn: day(row.reserve_repack_on),
     nojump: row.nojump === true || row.nojump === "t" || row.nojump === "true",
     nojumpNote: s(row.nojump_note),
+    beachCleared: row.beach_cleared === true || row.beach_cleared === "t" || row.beach_cleared === "true",
   };
 }
 
@@ -248,7 +251,7 @@ const personSelect = `
   select p.id, p.kind, p.name, p.email, p.phone, p.notes,
     p.uspa_license, p.uspa_ratings, p.uspa_member_number, p.uspa_member_expires::text as uspa_member_expires,
     p.waiver_signed_on::text as waiver_signed_on, p.emergency_name, p.emergency_relationship, p.emergency_phone,
-    p.reserve_repack_on::text as reserve_repack_on, p.nojump, p.nojump_note,
+    p.reserve_repack_on::text as reserve_repack_on, p.nojump, p.nojump_note, p.beach_cleared,
     coalesce((select sum(amount_cents) from ledger l
       where l.person_id = p.id and l.kind in ('wallet_credit', 'wallet_debit')), 0) as wallet_cents,
     (select count(*) from jump_log j where j.person_id = p.id) as jump_count
@@ -1169,6 +1172,7 @@ type ProfileInput = {
   notes: string;
   nojump: boolean;
   nojumpNote: string;
+  beachCleared: boolean;
 };
 
 export const updatePerson = createServerFn({ method: "POST" })
@@ -1187,6 +1191,7 @@ export const updatePerson = createServerFn({ method: "POST" })
     notes: (input.notes ?? "").trim().slice(0, 400),
     nojump: Boolean(input.nojump),
     nojumpNote: (input.nojumpNote ?? "").trim().slice(0, 240),
+    beachCleared: Boolean(input.beachCleared),
   }))
   .handler(async ({ context, data }) => {
     await requireStaff(context.userId);
@@ -1203,9 +1208,16 @@ export const updatePerson = createServerFn({ method: "POST" })
       reserve_repack_on = ${dateOrNull(data.reserveRepackOn)},
       notes = ${data.notes},
       nojump = ${data.nojump},
-      nojump_note = ${data.nojumpNote}
+      nojump_note = ${data.nojumpNote},
+      beach_cleared = ${data.beachCleared}
       where id = ${data.id}`;
-    await audit(context.userId, "update_person", "person", String(data.id), data.nojump ? `No-jump: ${data.nojumpNote}` : "Profile updated");
+    const detail = [
+      data.nojump ? `No-jump: ${data.nojumpNote}` : "",
+      data.beachCleared ? "Cleared for beach landings" : "",
+    ]
+      .filter(Boolean)
+      .join(". ");
+    await audit(context.userId, "update_person", "person", String(data.id), detail || "Profile updated");
     return { ok: true };
   });
 

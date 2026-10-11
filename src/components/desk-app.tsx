@@ -1246,6 +1246,7 @@ function ProfileEditor({
               notes: form.notes,
               nojump: form.nojump,
               nojumpNote: form.nojumpNote,
+              beachCleared: person.kind === "fun_jumper" ? form.beachCleared : false,
             },
           }),
         );
@@ -1307,10 +1308,23 @@ function ProfileEditor({
           </p>
         </div>
       ) : null}
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={form.nojump || Boolean(automatic)} disabled={Boolean(automatic)} onChange={(e) => set("nojump", e.target.checked)} />
-        No-jump flag
-      </label>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={form.nojump || Boolean(automatic)} disabled={Boolean(automatic)} onChange={(e) => set("nojump", e.target.checked)} />
+          No-jump flag
+        </label>
+        {person.kind === "fun_jumper" ? (
+          <label className={`flex items-center gap-2 text-sm ${form.beachCleared ? "font-semibold text-green-700" : ""}`}>
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-green-600"
+              checked={form.beachCleared}
+              onChange={(e) => set("beachCleared", e.target.checked)}
+            />
+            Cleared for Beach Landings
+          </label>
+        ) : null}
+      </div>
       {automatic ? (
         <p className="text-sm text-muted">On by itself until the missing or expired item is fixed. Checking in does not clear it.</p>
       ) : null}
