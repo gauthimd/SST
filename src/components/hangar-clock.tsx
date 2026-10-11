@@ -60,7 +60,6 @@ export function HangarClock({ date }: { date: string }) {
         if (!same) {
           if (!pinnedRef.current) indexRef.current = indexByTime(sorted, date);
           else {
-          else {
             const found = sorted.findIndex((load) => load.id === previousId);
             indexRef.current = found >= 0 ? found : Math.max(0, Math.min(indexRef.current, sorted.length - 1));
           }
