@@ -415,77 +415,97 @@ export const claimDesk = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+async function loadsForDate(date: string): Promise<Load[]> {
+  const sql = await getSql();
+  const loadRows = await sql.query<{
+    id: unknown;
+    load_number: unknown;
+    status: unknown;
+    call_time: unknown;
+    notes: unknown;
+    altitude_ft: unknown;
+    tail_number: unknown;
+    pilot_id: unknown;
+    pilot_name: unknown;
+  }>(
+    `select l.id, l.load_number, l.status, l.call_time, l.notes, l.altitude_ft, l.tail_number, l.pilot_id,
+       coalesce(pi.name, '') as pilot_name
+     from loads l
+     left join people pi on pi.id = l.pilot_id
+     where l.jump_date = $1
+     order by l.load_number`,
+    [date],
+  );
+  const slotRows = await sql.query<{
+    id: unknown;
+    load_id: unknown;
+    person_id: unknown;
+    person_name: unknown;
+    role: unknown;
+    instructor_id: unknown;
+    instructor_name: unknown;
+    jump_type: unknown;
+    media: unknown;
+    note: unknown;
+  }>(
+    `select s.id, s.load_id, s.person_id, p.name as person_name, s.role,
+       s.instructor_id, coalesce(i.name, '') as instructor_name, s.jump_type, s.media, s.note
+     from slots s
+     join people p on p.id = s.person_id
+     left join people i on i.id = s.instructor_id
+     join loads l on l.id = s.load_id
+     where l.jump_date = $1
+     order by p.name`,
+    [date],
+  );
+  return loadRows.map((row) => ({
+    id: n(row.id),
+    loadNumber: n(row.load_number),
+    status: s(row.status),
+    callTime: s(row.call_time),
+    notes: s(row.notes),
+    altitudeFt: n(row.altitude_ft) || 10000,
+    tailNumber: s(row.tail_number),
+    pilotId: n(row.pilot_id),
+    pilotName: s(row.pilot_name),
+    slots: slotRows
+      .filter((slot) => n(slot.load_id) === n(row.id))
+      .map((slot) => ({
+        id: n(slot.id),
+        personId: n(slot.person_id),
+        personName: s(slot.person_name),
+        role: s(slot.role),
+        instructorId: n(slot.instructor_id),
+        instructorName: s(slot.instructor_name),
+        jumpType: s(slot.jump_type),
+        media: s(slot.media),
+        note: s(slot.note),
+      })),
+  }));
+}
+
+export const loadClock = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .validator((date: string) => cleanDate(date))
+  .handler(async ({ context, data: date }): Promise<Load[]> => {
+    const role = await roleOf(context.userId);
+    if (!role) {
+      const people = await peopleQuery("where p.linked_user_id = $1", context.userId);
+      const person = people[0];
+      if (!person || person.kind !== "fun_jumper") throw new Error("The load clock is for fun jumpers who are clear to jump");
+      const block = jumpBlocker(person, date, "fun_jumper");
+      if (block) throw new Error(`The load clock opens once the no-jump flag is cleared. ${block}`);
+    }
+    return loadsForDate(date);
+  });
+
 export const loadDesk = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .validator((date: string) => cleanDate(date))
   .handler(async ({ context, data: date }): Promise<Desk> => {
     const role = await requireStaff(context.userId);
     const sql = await getSql();
-    const loadRows = await sql.query<{
-      id: unknown;
-      load_number: unknown;
-      status: unknown;
-      call_time: unknown;
-      notes: unknown;
-      altitude_ft: unknown;
-      tail_number: unknown;
-      pilot_id: unknown;
-      pilot_name: unknown;
-    }>(
-      `select l.id, l.load_number, l.status, l.call_time, l.notes, l.altitude_ft, l.tail_number, l.pilot_id,
-         coalesce(pi.name, '') as pilot_name
-       from loads l
-       left join people pi on pi.id = l.pilot_id
-       where l.jump_date = $1
-       order by l.load_number`,
-      [date],
-    );
-    const slotRows = await sql.query<{
-      id: unknown;
-      load_id: unknown;
-      person_id: unknown;
-      person_name: unknown;
-      role: unknown;
-      instructor_id: unknown;
-      instructor_name: unknown;
-      jump_type: unknown;
-      media: unknown;
-      note: unknown;
-    }>(
-      `select s.id, s.load_id, s.person_id, p.name as person_name, s.role,
-         s.instructor_id, coalesce(i.name, '') as instructor_name, s.jump_type, s.media, s.note
-       from slots s
-       join people p on p.id = s.person_id
-       left join people i on i.id = s.instructor_id
-       join loads l on l.id = s.load_id
-       where l.jump_date = $1
-       order by p.name`,
-      [date],
-    );
-    const loads: Load[] = loadRows.map((row) => ({
-      id: n(row.id),
-      loadNumber: n(row.load_number),
-      status: s(row.status),
-      callTime: s(row.call_time),
-      notes: s(row.notes),
-      altitudeFt: n(row.altitude_ft) || 10000,
-      tailNumber: s(row.tail_number),
-      pilotId: n(row.pilot_id),
-      pilotName: s(row.pilot_name),
-      slots: slotRows
-        .filter((slot) => n(slot.load_id) === n(row.id))
-        .map((slot) => ({
-          id: n(slot.id),
-          personId: n(slot.person_id),
-          personName: s(slot.person_name),
-          role: s(slot.role),
-          instructorId: n(slot.instructor_id),
-          instructorName: s(slot.instructor_name),
-          jumpType: s(slot.jump_type),
-          media: s(slot.media),
-          note: s(slot.note),
-        })),
-    }));
+    const loads = await loadsForDate(date);
     const bookings = (
       await sql.query<Parameters<typeof mapBooking>[0]>(
         `${bookingSelect} where b.jump_date = $1 order by b.id`,

@@ -80,6 +80,20 @@ export function DeskApp() {
   return <StaffHome me={me} error={error} setError={setError} />;
 }
 
+function FunJumperClock({ person }: { person: Person }) {
+  const block = jumpBlocker(person, todayChicago(), "fun_jumper");
+  if (block) {
+    return (
+      <p className="mt-3 text-sm text-coral">The load clock opens once the no-jump flag is cleared. {block}</p>
+    );
+  }
+  return (
+    <a className="btn mt-4" href={`/clock?date=${todayChicago()}`} target="_blank" rel="noopener noreferrer">
+      Open load clock
+    </a>
+  );
+}
+
 function CustomerHome({
   me,
   error,
@@ -205,6 +219,7 @@ function CustomerHome({
             {me.person.kind === "fun_jumper" ? (
               <p className="mt-2 text-sm text-muted">USPA licensed skydiver.</p>
             ) : null}
+            {me.person.kind === "fun_jumper" ? <FunJumperClock person={me.person} /> : null}
           </section>
           {me.person.kind === "instructor" || me.person.kind === "pilot" || me.person.kind === "crew" ? (
             <section className="card p-5">

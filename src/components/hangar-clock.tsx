@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { loadDesk, type Load } from "@/lib/dz";
+import { loadClock, type Load } from "@/lib/dz";
 
 const WIND_URL =
   "https://api.open-meteo.com/v1/forecast?latitude=27.8339&longitude=-97.0611" +
@@ -51,9 +51,9 @@ export function HangarClock({ date }: { date: string }) {
     let stop = false;
     async function pull() {
       try {
-        const desk = await loadDesk({ data: date });
+        const loads = await loadClock({ data: date });
         if (stop) return;
-        const sorted = [...desk.loads].sort(byCall);
+        const sorted = [...loads].sort(byCall);
         const previousId = loadsRef.current[indexRef.current]?.id;
         const same = fingerprint(sorted) === fingerprint(loadsRef.current);
         loadsRef.current = sorted;
