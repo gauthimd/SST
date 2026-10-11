@@ -35,7 +35,7 @@ import {
   type Me,
   type Person,
 } from "@/lib/dz";
-import { ALTITUDES, TAILS, jumpBlocker, reserveExpires, waiverCurrent } from "@/lib/jumper";
+import { ALTITUDES, TAILS, jumpBlocker, reserveExpires, takeoffProblem, waiverCurrent } from "@/lib/jumper";
 import { afterAdd, canFinish, isFull, passengerCount, seatCounts } from "@/lib/load-capacity";
 
 function errText(e: unknown) {
@@ -531,6 +531,8 @@ function LoadCard({
     return true;
   });
 
+  const planProblem = !pilotId ? "Pick a pilot" : takeoffProblem(date, callTime);
+
   return (
     <article className="card p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -559,6 +561,7 @@ function LoadCard({
         className="mt-3 grid gap-2 md:grid-cols-4"
         onSubmit={(e) => {
           e.preventDefault();
+          if (planProblem) return;
           void run(() =>
             setLoadPlan({
               data: { id: load.id, callTime, altitudeFt, tailNumber, pilotId: Number(pilotId || 0) },
@@ -589,9 +592,10 @@ function LoadCard({
             </option>
           ))}
         </select>
-        <button className="btn w-fit" disabled={busy}>
+        <button className="btn w-fit" disabled={busy || Boolean(planProblem)}>
           Save load
         </button>
+        {planProblem ? <p className="text-sm text-muted md:col-span-3">{planProblem}</p> : null}
       </form>
       <ul className="mt-3 space-y-1 text-sm">
         {load.slots.map((slot) => (

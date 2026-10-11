@@ -3,7 +3,7 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 import { FUN_JUMP_CENTS, assertTestCard, quote } from "@/lib/catalog";
-import { ALTITUDES, TAILS, jumpBlocker } from "@/lib/jumper";
+import { ALTITUDES, TAILS, jumpBlocker, takeoffProblem } from "@/lib/jumper";
 import { afterAdd, canFinish, seatCounts, seatRefusal } from "@/lib/load-capacity";
 
 export type Role = "owner" | "admin" | "staff";
@@ -1208,6 +1208,9 @@ export const setLoadPlan = createServerFn({ method: "POST" })
     const loads = await sql<{ jump_date: unknown }>`select jump_date::text as jump_date from loads where id = ${data.id}`;
     const jumpDate = day(loads[0]?.jump_date);
     if (!jumpDate) throw new Error("Load not found");
+    if (!data.pilotId) throw new Error("Pick a pilot");
+    const timeProblem = takeoffProblem(jumpDate, data.callTime);
+    if (timeProblem) throw new Error(timeProblem);
     let pilotId: number | null = null;
     if (data.pilotId) {
       const pilots = await peopleQuery("where p.id = $1", data.pilotId);

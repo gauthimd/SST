@@ -6,6 +6,32 @@ export const ALTITUDES = [
   { ft: 12000, label: "Fun jumper · 12,000 ft" },
 ] as const;
 
+export function takeoffProblem(jumpDate: string, callTime: string) {
+  if (!/^\d{2}:\d{2}$/.test(callTime)) return "Pick a takeoff time";
+  const now = new Date();
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+  if (jumpDate < today) return "Takeoff has to be after the current time";
+  if (jumpDate > today) return "";
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? "0");
+  const [hour, minute] = callTime.split(":").map(Number);
+  const call = hour * 3600 + minute * 60;
+  const current = get("hour") * 3600 + get("minute") * 60 + get("second");
+  if (call <= current) return "Takeoff has to be after the current time";
+  return "";
+}
+
 export function addDays(iso: string, days: number) {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
