@@ -71,6 +71,17 @@ function iso(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+export function canFunJump(person: { kind: string; deskRole?: string }) {
+  return (
+    person.kind === "fun_jumper" ||
+    person.kind === "instructor" ||
+    person.kind === "pilot" ||
+    person.kind === "crew" ||
+    person.deskRole === "owner" ||
+    person.deskRole === "admin"
+  );
+}
+
 export function jumpBlocker(person: JumpPerson, jumpDate: string, seat?: string) {
   if (person.nojump) return person.nojumpNote.trim() || "No-jump flag";
   const asFunJumper = seat === "fun_jumper" || (!seat && person.kind === "fun_jumper");
@@ -81,7 +92,7 @@ export function jumpBlocker(person: JumpPerson, jumpDate: string, seat?: string)
     const exp = reserveExpires(person.reserveRepackOn);
     if (exp < jumpDate) return `No-jump: reserve expired ${exp}`;
   }
-  if (licensed && (person.kind === "fun_jumper" || person.kind === "instructor")) {
+  if (asFunJumper || person.kind === "fun_jumper" || person.kind === "instructor") {
     if (!person.uspaMemberNumber.trim() || !iso(person.uspaMemberExpires)) return "No-jump: USPA membership is missing";
     if (person.uspaMemberExpires < jumpDate) return `No-jump: USPA membership expired ${person.uspaMemberExpires}`;
   }

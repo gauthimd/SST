@@ -36,7 +36,7 @@ import {
   type Me,
   type Person,
 } from "@/lib/dz";
-import { ALTITUDES, TAILS, daysUntil, jumpBlocker, reserveExpires, takeoffProblem, waiverCurrent } from "@/lib/jumper";
+import { ALTITUDES, TAILS, canFunJump, daysUntil, jumpBlocker, reserveExpires, takeoffProblem, waiverCurrent } from "@/lib/jumper";
 import { afterAdd, canFinish, isFull, passengerCount, seatCounts } from "@/lib/load-capacity";
 
 function errText(e: unknown) {
@@ -199,7 +199,7 @@ function CustomerHome({
           <section className="card p-5">
             <p className="text-xs font-semibold tracking-[0.14em] text-sea uppercase">{kindLabel(me.person.kind)}</p>
             <h2 className="text-3xl">{me.person.name}</h2>
-            {me.person.kind === "fun_jumper" ? (
+            {me.person.kind === "fun_jumper" || canFunJump(me.person) ? (
               <p className="mt-2 font-display text-3xl text-sea">{money(me.person.walletCents)} on account</p>
             ) : null}
             {me.person.kind === "fun_jumper" ? (
@@ -210,8 +210,8 @@ function CustomerHome({
             <section className="card p-5">
               <p className="text-muted">
                 {me.person.kind === "crew"
-                  ? "Your manifest login is active."
-                  : `You're confirmed as a ${kindLabel(me.person.kind).toLowerCase()}. Manifest can put you on a load after you check in.`}
+                  ? "Your manifest login is active. You can also fun jump after you check in, once your reserve and USPA are current."
+                  : `You're confirmed as a ${kindLabel(me.person.kind).toLowerCase()}. You can also fun jump after you check in, once your reserve and USPA are current.`}
               </p>
             </section>
           ) : me.person.kind !== "fun_jumper" ? (
@@ -657,7 +657,7 @@ function LoadCard({
           {choices.map((p) => (
             <option key={p.id} value={p.id}>
               {optionLabel(p, desk)}
-              {seatRole === "fun_jumper" && p.kind === "instructor" ? " · fun jump" : ""}
+              {seatRole === "fun_jumper" && p.kind !== "fun_jumper" ? ` · ${kindLabel(p.kind)}` : ""}
             </option>
           ))}
         </select>
@@ -744,11 +744,8 @@ function optionLabel(person: Person, desk: Desk) {
 
 function available(desk: Desk, kind: string, date: string) {
   return desk.people.filter((p) => {
-    if (kind === "fun_jumper" && p.kind === "instructor") {
-      return desk.funJumpIds.includes(p.id) && !jumpBlocker(p, date, "fun_jumper");
-    }
     if (!desk.checkedInIds.includes(p.id)) return false;
-    if (kind === "fun_jumper") return p.kind === "fun_jumper" && !jumpBlocker(p, date, "fun_jumper");
+    if (kind === "fun_jumper") return canFunJump(p) && !jumpBlocker(p, date, "fun_jumper");
     return p.kind === kind && !jumpBlocker(p, date, kind);
   });
 }
@@ -1003,7 +1000,7 @@ function AccountsPanel({
     );
   });
   const shownAccounts = accountMatches.slice(0, 20);
-  const moneyPerson = desk.people.find((person) => String(person.id) === personId && person.kind === "fun_jumper");
+  const moneyPerson = desk.people.find((person) => String(person.id) === personId && canFunJump(person));
 
   return (
     <div className="mt-6 space-y-4">
@@ -1050,7 +1047,7 @@ function AccountsPanel({
                     className="card flex w-full items-center justify-between gap-3 p-4 text-left"
                     onClick={() => {
                       setSelected(String(p.id));
-                      if (p.kind === "fun_jumper") setPersonId(String(p.id));
+                      if (canFunJump(p)) setPersonId(String(p.id));
                     }}
                   >
                     <div>
@@ -1059,10 +1056,10 @@ function AccountsPanel({
                         {kindLabel(p.kind)}
                         {p.phone ? ` · ${p.phone}` : ""} · {p.jumpCount} jumps
                         {block ? ` · ${block}` : ""}
-                        {!waiverCurrent(p.waiverSignedOn, date) && p.kind !== "pilot" ? " · waiver not signed this year" : ""}
+                        {!waiverCurrent(p.waiverSignedOn, date) && canFunJump(p) ? " · waiver not signed this year" : ""}
                       </p>
                     </div>
-                    {p.kind === "fun_jumper" ? <p className="font-display text-2xl text-sea">{money(p.walletCents)}</p> : null}
+                    {canFunJump(p) ? <p className="font-display text-2xl text-sea">{money(p.walletCents)}</p> : null}
                   </button>
                 </li>
               );
@@ -1223,7 +1220,7 @@ function ProfileEditor({
   const [jumps, setJumps] = useState<JumpEntry[]>([]);
   const [logDate, setLogDate] = useState(date);
   const [logNote, setLogNote] = useState("");
-  const rig = person.kind === "fun_jumper" || person.kind === "instructor";
+  const rig = canFunJump(person);
   useEffect(() => {
     setForm(person);
   }, [person]);
@@ -1257,7 +1254,7 @@ function ProfileEditor({
               notes: form.notes,
               nojump: form.nojump,
               nojumpNote: form.nojumpNote,
-              beachCleared: form.beachCleared,
+              beachCleared: canFunJump(person) ? form.beachCleared : false,
             },
           }),
         );
@@ -1315,7 +1312,7 @@ function ProfileEditor({
               : exp
                 ? `Reserve expires ${exp} (${daysLeft(exp)})`
                 : "No repack date yet"}
-            {person.kind === "instructor" && exp ? ` On file: expires ${exp}.${exp < date ? " That date is expired, so they cannot fun jump." : ""}` : ""}
+            {person.kind === "instructor" && exp ? ` Reserve expires ${exp} (${daysLeft(exp)}).` : ""}
           </p>
         </div>
       ) : null}
@@ -1324,7 +1321,7 @@ function ProfileEditor({
           <input type="checkbox" checked={form.nojump || Boolean(automatic)} disabled={Boolean(automatic)} onChange={(e) => set("nojump", e.target.checked)} />
           No-jump flag
         </label>
-        {person.kind === "fun_jumper" ? (
+        {canFunJump(person) ? (
           <label className={`flex items-center gap-2 text-sm ${form.beachCleared ? "font-semibold text-green-700" : ""}`}>
             <input
               type="checkbox"
@@ -1399,9 +1396,10 @@ function CheckinPanel({
     ["fun_jumper", "Fun jumpers"],
     ["instructor", "Tandem instructors"],
     ["pilot", "Pilots"],
+    ["crew", "Manifest"],
   ] as const;
   return (
-    <div className="mt-6 grid gap-4 md:grid-cols-3">
+    <div className="mt-6 grid gap-4 md:grid-cols-2">
       {groups.map(([kind, title]) => (
         <section key={kind} className="card p-4">
           <h2 className="text-2xl">{title}</h2>
@@ -1411,17 +1409,14 @@ function CheckinPanel({
               .filter((p) => p.kind === kind)
               .map((p) => {
                 const on = desk.checkedInIds.includes(p.id);
-                const fun = desk.funJumpIds.includes(p.id);
                 const block = jumpBlocker(p, date);
-                const funBlock = kind === "instructor" ? jumpBlocker(p, date, "fun_jumper") : "";
+                const funBlock = canFunJump(p) && p.kind !== "fun_jumper" ? jumpBlocker(p, date, "fun_jumper") : "";
                 return (
                   <li key={p.id} className="flex items-center justify-between gap-2">
                     <span className="text-sm">
                       {p.name}
                       {block ? <span className="block text-coral">{block}</span> : null}
-                      {kind === "instructor" && funBlock && funBlock !== block ? (
-                        <span className="block text-coral">{funBlock}</span>
-                      ) : null}
+                      {funBlock && funBlock !== block ? <span className="block text-coral">{funBlock}</span> : null}
                     </span>
                     <span className="flex shrink-0 gap-1">
                       <button
@@ -1432,16 +1427,6 @@ function CheckinPanel({
                       >
                         {on ? "In" : "Out"}
                       </button>
-                      {kind === "instructor" ? (
-                        <button
-                          type="button"
-                          className={fun ? "btn" : "btn btn-ghost"}
-                          disabled={busy || (!fun && Boolean(funBlock))}
-                          onClick={() => run(() => toggleCheckin({ data: { personId: p.id, date, on: !fun, funJump: true } }))}
-                        >
-                          {fun ? "Fun in" : "Fun jump"}
-                        </button>
-                      ) : null}
                     </span>
                   </li>
                 );

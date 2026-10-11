@@ -3,7 +3,7 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 import { FUN_JUMP_CENTS, assertTestCard, quote } from "@/lib/catalog";
-import { ALTITUDES, TAILS, jumpBlocker, takeoffProblem } from "@/lib/jumper";
+import { ALTITUDES, TAILS, canFunJump, jumpBlocker, takeoffProblem } from "@/lib/jumper";
 import { afterAdd, canFinish, seatCounts, seatRefusal } from "@/lib/load-capacity";
 
 export type Role = "owner" | "admin" | "staff";
@@ -29,6 +29,7 @@ export type Person = {
   nojump: boolean;
   nojumpNote: string;
   beachCleared: boolean;
+  deskRole: string;
 };
 
 export type Booking = {
@@ -222,6 +223,7 @@ function mapPerson(row: {
   nojump: unknown;
   nojump_note: unknown;
   beach_cleared: unknown;
+  desk_role: unknown;
 }): Person {
   return {
     id: n(row.id),
@@ -244,6 +246,7 @@ function mapPerson(row: {
     nojump: row.nojump === true || row.nojump === "t" || row.nojump === "true",
     nojumpNote: s(row.nojump_note),
     beachCleared: row.beach_cleared === true || row.beach_cleared === "t" || row.beach_cleared === "true",
+    deskRole: s(row.desk_role),
   };
 }
 
@@ -252,6 +255,7 @@ const personSelect = `
     p.uspa_license, p.uspa_ratings, p.uspa_member_number, p.uspa_member_expires::text as uspa_member_expires,
     p.waiver_signed_on::text as waiver_signed_on, p.emergency_name, p.emergency_relationship, p.emergency_phone,
     p.reserve_repack_on::text as reserve_repack_on, p.nojump, p.nojump_note, p.beach_cleared,
+    coalesce((select m.role from memberships m where m.user_id = p.linked_user_id), '') as desk_role,
     coalesce((select sum(amount_cents) from ledger l
       where l.person_id = p.id and l.kind in ('wallet_credit', 'wallet_debit')), 0) as wallet_cents,
     (select count(*) from jump_log j where j.person_id = p.id) as jump_count
@@ -696,8 +700,15 @@ export const addSlot = createServerFn({ method: "POST" })
       [data.personId, jumpDate],
     );
     const checkedOn = (value: unknown) => value === true || value === "t" || value === "true";
-    if (data.role === "fun_jumper" && person.kind === "instructor") {
-      if (!checked[0] || !checkedOn(checked[0].fun_jump)) throw new Error("Check them in as a fun jumper first");
+    if (data.role === "fun_jumper") {
+      if (!canFunJump(person)) throw new Error("That account is not a fun jumper");
+      if (!checked[0]) throw new Error("Check them in for this day first");
+      const flying = await sql<{ id: unknown }>`
+        select id from loads
+        where jump_date = ${jumpDate} and status <> 'landed' and pilot_id = ${data.personId}
+        limit 1
+      `;
+      if (flying[0]) throw new Error(`${person.name} is still the pilot on a load that has not landed`);
     } else if ((data.role === "fun_jumper" || data.role === "instructor") && !checked[0]) {
       throw new Error("Check them in for this day first");
     }
@@ -969,7 +980,7 @@ export const fundWallet = createServerFn({ method: "POST" })
     `;
     const person = people[0];
     if (!person) throw new Error("Account not found");
-    if (s(person.kind) !== "fun_jumper") throw new Error("Only fun jumper accounts hold a balance");
+    if (!canFunJump({ kind: s(person.kind) })) throw new Error("Only fun jumper accounts hold a balance");
     const linked = s(person.linked_user_id);
     if (!role && linked !== context.userId) throw new Error("That account isn't yours");
     if (!role && data.method === "cash") throw new Error("Cash is taken at the desk");
@@ -1230,8 +1241,9 @@ export const setBeachCleared = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await requireStaff(context.userId);
     const sql = await getSql();
-    const rows = await sql<{ kind: unknown }>`select kind from people where id = ${data.id}`;
-    if (s(rows[0]?.kind) !== "fun_jumper") throw new Error("Beach clearance is only for fun jumpers");
+    const people = await peopleQuery("where p.id = $1", data.id);
+    const person = people[0];
+    if (!person || !canFunJump(person)) throw new Error("Beach clearance is only for fun jumpers");
     await sql`update people set beach_cleared = ${data.cleared} where id = ${data.id}`;
     await audit(
       context.userId,
