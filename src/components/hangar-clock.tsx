@@ -113,7 +113,8 @@ export function HangarClock({ date }: { date: string }) {
       return;
     }
     const width = window.innerWidth;
-    const y = 80 + Math.random() * Math.max(40, window.innerHeight * 0.55 - 80);
+    const pass = tripsRef.current * 2 + (direction === "left" ? 1 : 0);
+    const y = planeAltitude(pass);
     const from = direction === "right" ? -340 : width + 40;
     const to = direction === "right" ? width + 40 : -340;
     const started = performance.now();
@@ -280,6 +281,14 @@ export function HangarClock({ date }: { date: string }) {
       <WindFetcher onWinds={setWinds} onSunset={setSunset} onUpdated={setUpdated} />
     </div>
   );
+}
+
+function planeAltitude(pass: number) {
+  const height = window.innerHeight;
+  const planeH = 84;
+  const quarter = height / 4;
+  const center = height - quarter * (Math.min(pass, 3) + 0.5);
+  return Math.max(8, Math.min(center - planeH / 2, height - planeH - 8));
 }
 
 function CardColumn({ loads }: { loads: Array<Load | null> }) {
