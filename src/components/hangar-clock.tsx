@@ -58,7 +58,8 @@ export function HangarClock({ date }: { date: string }) {
         const same = fingerprint(sorted) === fingerprint(loadsRef.current);
         loadsRef.current = sorted;
         if (!same) {
-          if (!pinnedRef.current) indexRef.current = indexByTime(sorted);
+          if (!pinnedRef.current) indexRef.current = indexByTime(sorted, date);
+          else {
           else {
             const found = sorted.findIndex((load) => load.id === previousId);
             indexRef.current = found >= 0 ? found : Math.max(0, Math.min(indexRef.current, sorted.length - 1));
@@ -144,7 +145,7 @@ export function HangarClock({ date }: { date: string }) {
 
   function markIfAlreadyZero() {
     const current = loadsRef.current[indexRef.current];
-    const remain = current?.callTime ? secondsUntil(new Date(), current.callTime) : null;
+    const remain = current?.callTime ? secondsUntil(new Date(), date, current.callTime) : null;
     zeroSinceRef.current = remain != null && remain <= 0 ? Date.now() : null;
   }
 
@@ -159,10 +160,16 @@ export function HangarClock({ date }: { date: string }) {
   }
 
   const current = loads[index];
-  const remain = timerOn && current?.callTime ? secondsUntil(now, current.callTime) : null;
+  const pastDay = date < chicagoDate(now);
+  const remain = timerOn && current?.callTime ? secondsUntil(now, date, current.callTime) : null;
 
   useEffect(() => {
     if (!timerOn || remain == null) return;
+    if (pastDay) {
+      zeroSinceRef.current = null;
+      setStatus("Jump day is over");
+      return;
+    }
     if (remain > 0) {
       zeroSinceRef.current = null;
       setStatus("");
@@ -185,7 +192,7 @@ export function HangarClock({ date }: { date: string }) {
         setStatus("");
       }
     }
-  }, [now, remain, timerOn]);
+  }, [now, remain, timerOn, pastDay]);
 
   const shown = [0, 1, 2, 3].map((offset) => loads[index + offset] ?? null);
   const clock = chicagoClock(now);
@@ -435,30 +442,46 @@ function fingerprint(loads: Load[]) {
   return loads
     .map(
       (load) =>
-        `${load.id}:${load.callTime}:${load.tailNumber}:${load.pilotName}:${load.altitudeFt}:${load.slots
+        `${load.id}:${load.status}:${load.callTime}:${load.tailNumber}:${load.pilotName}:${load.altitudeFt}:${load.slots
           .map((slot) => `${slot.id},${slot.personName},${slot.role},${slot.instructorName},${slot.media},${slot.jumpType},${slot.note}`)
           .join("|")}`,
     )
     .join("||");
 }
 
-function indexByTime(loads: Load[]) {
-  const parts = chicagoParts(new Date());
-  const now = parts.h * 3600 + parts.m * 60 + parts.s;
+function indexByTime(loads: Load[], jumpDate: string, now = new Date()) {
+  if (jumpDate < chicagoDate(now)) return 0;
   const found = loads.findIndex((load) => {
-    if (!load.callTime) return false;
-    const [h, m] = load.callTime.split(":").map(Number);
-    return h * 3600 + m * 60 >= now;
+    if (!load.callTime || load.status === "landed") return false;
+    const remain = secondsUntil(now, jumpDate, load.callTime);
+    return remain != null && remain >= 0;
   });
   if (found >= 0) return found;
   return Math.max(0, loads.length - 1);
 }
 
-function secondsUntil(now: Date, call: string) {
+function secondsUntil(now: Date, jumpDate: string, call: string) {
   const parts = chicagoParts(now);
   const [h, m] = call.split(":").map(Number);
   if ([h, m, parts.h, parts.m].some((n) => Number.isNaN(n))) return null;
-  return h * 3600 + m * 60 - (parts.h * 3600 + parts.m * 60 + parts.s);
+  const callSeconds = h * 3600 + m * 60;
+  const nowSeconds = parts.h * 3600 + parts.m * 60 + parts.s;
+  return callSeconds - nowSeconds + daysBetween(chicagoDate(now), jumpDate) * 86400;
+}
+
+function daysBetween(fromIso: string, toIso: string) {
+  const [fy, fm, fd] = fromIso.split("-").map(Number);
+  const [ty, tm, td] = toIso.split("-").map(Number);
+  return Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86400000);
+}
+
+function chicagoDate(now: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
 }
 
 function formatHms(total: number) {
