@@ -306,6 +306,7 @@ function LoadCard({ load }: { load: Load | null }) {
             <p>Depart {load.callTime || "—"}</p>
             {load.tailNumber ? <p className="text-[#00ccff]">Tail: {load.tailNumber}</p> : null}
             {load.altitudeFt ? <p className="text-[#cccccc]">{load.altitudeFt.toLocaleString()} ft</p> : null}
+            <p className="text-[#ffcc66]">Pilot: {load.pilotName ? displayName(load.pilotName) : "—"}</p>
           </div>
           <div className={`mt-2 grid ${LOAD_COLS} text-base font-bold text-[#88aacc]`}>
             <span>Skydiver</span>
@@ -424,7 +425,7 @@ function fingerprint(loads: Load[]) {
   return loads
     .map(
       (load) =>
-        `${load.id}:${load.callTime}:${load.tailNumber}:${load.altitudeFt}:${load.slots
+        `${load.id}:${load.callTime}:${load.tailNumber}:${load.pilotName}:${load.altitudeFt}:${load.slots
           .map((slot) => `${slot.id},${slot.personName},${slot.role},${slot.instructorName},${slot.media},${slot.jumpType}`)
           .join("|")}`,
     )
