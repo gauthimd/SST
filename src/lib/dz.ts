@@ -747,11 +747,12 @@ export const removeSlot = createServerFn({ method: "POST" })
       id: unknown;
       load_id: unknown;
       person_id: unknown;
+      instructor_id: unknown;
       role: unknown;
       status: unknown;
       person_name: unknown;
     }>`
-      select s.id, s.load_id, s.person_id, s.role, l.status, p.name as person_name
+      select s.id, s.load_id, s.person_id, s.instructor_id, s.role, l.status, p.name as person_name
       from slots s
       join loads l on l.id = s.load_id
       join people p on p.id = s.person_id
@@ -762,21 +763,48 @@ export const removeSlot = createServerFn({ method: "POST" })
     if (s(slot.status) === "airborne" || s(slot.status) === "landed") {
       throw new Error("The plane is already airborne. You can't take someone off this load.");
     }
-    if (s(slot.role) === "instructor") {
-      const student = await sql<{ id: unknown }>`
-        select id from slots
-        where load_id = ${n(slot.load_id)} and role = 'tandem' and instructor_id = ${n(slot.person_id)}
-        limit 1
+    const loadId = n(slot.load_id);
+    const personId = n(slot.person_id);
+    const role = s(slot.role);
+    const removed = [s(slot.person_name)];
+    if (role === "tandem") {
+      const instructorId = n(slot.instructor_id);
+      await sql`delete from slots where id = ${data.slotId}`;
+      if (instructorId) {
+        const stillPaired = await sql<{ id: unknown }>`
+          select id from slots
+          where load_id = ${loadId} and role = 'tandem' and instructor_id = ${instructorId}
+          limit 1
+        `;
+        if (!stillPaired[0]) {
+          const instructor = await sql<{ name: unknown }>`
+            select p.name from slots s
+            join people p on p.id = s.person_id
+            where s.load_id = ${loadId} and s.role = 'instructor' and s.person_id = ${instructorId}
+          `;
+          if (instructor[0]) removed.push(s(instructor[0].name));
+          await sql`delete from slots where load_id = ${loadId} and role = 'instructor' and person_id = ${instructorId}`;
+        }
+      }
+    } else if (role === "instructor") {
+      const students = await sql<{ name: unknown }>`
+        select p.name
+        from slots s
+        join people p on p.id = s.person_id
+        where s.load_id = ${loadId} and s.role = 'tandem' and s.instructor_id = ${personId}
       `;
-      if (student[0]) throw new Error(`Take ${s(slot.person_name)}'s tandem student off the load first`);
+      for (const student of students) removed.push(s(student.name));
+      await sql`delete from slots where load_id = ${loadId} and role = 'tandem' and instructor_id = ${personId}`;
+      await sql`delete from slots where id = ${data.slotId}`;
+    } else {
+      await sql`delete from slots where id = ${data.slotId}`;
     }
-    await sql`delete from slots where id = ${data.slotId}`;
     await audit(
       context.userId,
       "remove_slot",
       "slot",
       String(data.slotId),
-      `${s(slot.person_name)} off load ${n(slot.load_id)}`,
+      `${removed.join(" and ")} off load ${loadId}`,
     );
     return { ok: true };
   });
