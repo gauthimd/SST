@@ -517,7 +517,6 @@ function LoadCard({
   const roleChoices = [
     canFinish(afterAdd(counts, "fun_jumper")) ? "fun_jumper" : "",
     canFinish(afterAdd(counts, counts.tandems >= counts.instructors ? "tandem_with_instructor" : "tandem")) ? "tandem" : "",
-    canFinish(afterAdd(counts, "instructor")) ? "instructor" : "",
   ].filter(Boolean);
   const seatRole = roleChoices.includes(role) ? role : roleChoices[0] ?? "fun_jumper";
   const choices = (seatRole === "tandem" ? tandems : seatRole === "instructor" ? instructors : funJumpers).filter((person) => {
@@ -634,7 +633,6 @@ function LoadCard({
         <select className="field" value={seatRole} onChange={(e) => { setRole(e.target.value); setPersonId(""); }}>
           {roleChoices.includes("fun_jumper") ? <option value="fun_jumper">Fun jumper</option> : null}
           {roleChoices.includes("tandem") ? <option value="tandem">Tandem student</option> : null}
-          {roleChoices.includes("instructor") ? <option value="instructor">Tandem instructor</option> : null}
         </select>
         <select className="field" required value={personId} onChange={(e) => setPersonId(e.target.value)}>
           <option value="">{seatRole === "tandem" ? "Tandem jumper" : "Checked in"}</option>

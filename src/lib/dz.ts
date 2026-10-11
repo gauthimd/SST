@@ -650,8 +650,12 @@ export const addSlot = createServerFn({ method: "POST" })
       limit 1
     `;
     if (elsewhere[0]) throw new Error(`${person.name} is already on a load`);
-    if (data.role === "videographer") {
-      throw new Error("Video rides with the tandem instructor. It is not another seat.");
+    if (data.role === "videographer" || data.role === "instructor") {
+      throw new Error(
+        data.role === "videographer"
+          ? "Video rides with the tandem instructor. It is not another seat."
+          : "Pick the tandem instructor when you add the student. An instructor is not a seat by themselves.",
+      );
     }
     const counts = seatCounts(seated.map((slot) => ({ role: s(slot.role) })));
     const checked = await sql.query<{ fun_jump: unknown; instructor_in: unknown }>(
