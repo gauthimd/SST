@@ -193,13 +193,13 @@ export function HangarClock({ date }: { date: string }) {
   const timeColor = !timerOn || remain == null ? "#ffffff" : remain <= 0 ? "#ff2222" : remain <= 60 ? "#ff4444" : "#ffffff";
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#003399] text-white" data-board="hangar">
-      <div className="flex h-full min-h-0 flex-col">
-        <h1 className="shrink-0 py-2 text-center font-['Oswald',sans-serif] text-5xl tracking-wide text-[#00ff88] xl:text-6xl">
+    <div className="fixed inset-0 overflow-y-auto bg-[#003399] text-white lg:overflow-hidden" data-board="hangar">
+      <div className="flex min-h-full flex-col lg:h-full lg:min-h-0">
+        <h1 className="shrink-0 px-3 py-2 text-center font-['Oswald',sans-serif] text-3xl tracking-wide text-[#00ff88] sm:text-4xl lg:text-5xl xl:text-6xl">
           SKYDIVE SOUTH TEXAS
         </h1>
-        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1.2fr)]">
-          <div className="flex min-h-0 flex-col px-3 pb-3">
+        <div className="flex flex-col gap-4 px-3 pb-8 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1.2fr)] lg:grid-rows-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-0 lg:px-0 lg:pb-0">
+          <div className="hidden min-h-0 flex-col px-3 pb-3 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:flex">
             <img src="/clock/sstlogo.png" alt="Skydive South Texas" className="mx-auto h-auto max-h-[22vh] w-auto max-w-full object-contain" />
             <div className="mt-2 min-h-0 flex-1">
               <img
@@ -210,16 +210,15 @@ export function HangarClock({ date }: { date: string }) {
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-col">
-            <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-3 text-center">
-              <p className="font-['Courier_New',monospace] text-7xl text-[#00ccff] xl:text-8xl">{clock}</p>
-              <p className="mt-4 text-4xl font-bold text-[#cccccc]">{current ? `Load ${current.loadNumber} Call` : "Load Call"}</p>
+          <div className="flex flex-col items-center justify-center px-1 text-center lg:col-start-2 lg:row-start-1 lg:h-full lg:min-h-0 lg:px-3">
+              <p className="font-['Courier_New',monospace] text-4xl text-[#00ccff] sm:text-5xl lg:text-7xl xl:text-8xl">{clock}</p>
+              <p className="mt-3 text-2xl font-bold text-[#cccccc] lg:mt-4 lg:text-4xl">{current ? `Load ${current.loadNumber} Call` : "Load Call"}</p>
               {timerOn ? (
-                <p className="mt-2 font-['Courier_New',monospace] text-[9rem] leading-none font-bold tabular-nums xl:text-[11rem]" style={{ color: timeColor }}>
+                <p className="mt-2 font-['Courier_New',monospace] text-6xl leading-none font-bold tabular-nums sm:text-7xl lg:text-[9rem] xl:text-[11rem]" style={{ color: timeColor }}>
                   {timeText}
                 </p>
               ) : null}
-              <p className="mt-2 min-h-8 text-3xl font-bold text-[#ff2222]">{status}</p>
+              <p className="mt-2 min-h-8 text-2xl font-bold text-[#ff2222] lg:text-3xl">{status}</p>
               {error ? <p className="mt-1 max-w-sm text-sm text-[#ff8888]">{error}</p> : null}
               <div className="mt-2 flex flex-wrap justify-center gap-2">
                 <ClockButton
@@ -249,21 +248,21 @@ export function HangarClock({ date }: { date: string }) {
                 </ClockButton>
               </div>
               {counting ? null : <p className="sr-only">Countdown {timeText}</p>}
-            </div>
-            <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-3 pb-3">
-              <p className="text-2xl font-bold text-[#00ccff] xl:text-3xl">WINDS & TEMP — PORT ARANSAS</p>
-              <p className="text-base text-[#88aacc]">(arrows point downwind)</p>
-              <p className="mb-3 text-sm text-[#88aacc]">Last update: {updated}</p>
+          </div>
+
+          <div className="order-3 flex h-auto flex-col items-center px-1 pb-2 lg:order-none lg:col-start-2 lg:row-start-2 lg:h-full lg:justify-center lg:px-3 lg:pb-3">
+              <p className="text-center text-lg font-bold text-[#00ccff] lg:text-2xl xl:text-3xl">WINDS & TEMP — PORT ARANSAS</p>
+              <p className="text-sm text-[#88aacc] lg:text-base">(arrows point downwind)</p>
+              <p className="mb-2 text-xs text-[#88aacc] lg:mb-3 lg:text-sm">Last update: {updated}</p>
               {ALTS.map((alt) => (
-                <p key={alt} className="whitespace-nowrap font-['Courier_New',monospace] text-2xl text-white xl:text-4xl">
-                  <span className="inline-block w-56 text-right text-[#cccccc]">{alt}:</span> {winds[alt]}
+                <p key={alt} className="font-['Courier_New',monospace] text-sm text-white sm:text-base lg:text-2xl lg:whitespace-nowrap xl:text-4xl">
+                  <span className="inline-block w-24 text-right text-[#cccccc] sm:w-32 lg:w-56">{alt}:</span> {winds[alt]}
                 </p>
               ))}
-              <p className="mt-3 whitespace-nowrap font-['Courier_New',monospace] text-2xl xl:text-3xl">
+              <p className="mt-3 font-['Courier_New',monospace] text-base lg:text-2xl lg:whitespace-nowrap xl:text-3xl">
                 <span className="text-[#cccccc]">Sunset today:</span> <span className="text-[#00ff88]">{sunset}</span>
               </p>
-              <p className="mt-3 text-sm text-[#6688bb]">Data source: Open-Meteo</p>
-            </div>
+              <p className="mt-2 text-xs text-[#6688bb] lg:mt-3 lg:text-sm">Data source: Open-Meteo</p>
           </div>
 
           <CardColumn loads={shown} />
@@ -285,7 +284,7 @@ export function HangarClock({ date }: { date: string }) {
 
 function CardColumn({ loads }: { loads: Array<Load | null> }) {
   return (
-    <div className="flex min-h-0 flex-col justify-start gap-3 overflow-auto px-3 py-2">
+    <div className="order-2 flex flex-col justify-start gap-3 lg:order-none lg:col-start-3 lg:row-start-1 lg:row-span-2 lg:min-h-0 lg:overflow-auto lg:px-3 lg:py-2">
       {loads.map((load, i) => (
         <LoadCard key={load?.id ?? `empty-${i}`} load={load} />
       ))}
@@ -296,22 +295,23 @@ function CardColumn({ loads }: { loads: Array<Load | null> }) {
 function LoadCard({ load }: { load: Load | null }) {
   const rows = load ? jumperRows(load) : [];
   return (
-    <article className="shrink-0 rounded-sm border-2 border-[#00ccff] bg-[#001a4d] px-3 py-2">
+    <article className={`${load ? "" : "hidden lg:block"} shrink-0 rounded-sm border-2 border-[#00ccff] bg-[#001a4d] px-3 py-2`}>
       {!load ? (
         <p className="py-1 text-center text-xl text-[#cccccc]">— no load —</p>
       ) : (
         <>
-          <div className="flex flex-wrap items-baseline gap-x-3 text-xl">
-            <p className="text-2xl font-bold text-[#00ff88]">Load {load.loadNumber}</p>
+          <div className="flex flex-wrap items-baseline gap-x-3 text-base lg:text-xl">
+            <p className="text-xl font-bold text-[#00ff88] lg:text-2xl">Load {load.loadNumber}</p>
             <p>Depart {load.callTime || "—"}</p>
             {load.tailNumber ? <p className="text-[#00ccff]">Tail: {load.tailNumber}</p> : null}
             {load.altitudeFt ? <p className="text-[#cccccc]">{load.altitudeFt.toLocaleString()} ft</p> : null}
             <p className="text-[#ffcc66]">Pilot: {load.pilotName ? displayName(load.pilotName) : "—"}</p>
           </div>
-          <div className={`mt-2 grid ${LOAD_COLS} text-base font-bold text-[#88aacc]`}>
+          <div className={`mt-2 grid ${LOAD_COLS} text-xs font-bold text-[#88aacc] lg:text-base`}>
             <span>Skydiver</span>
             <span>TI</span>
-            <span>Photos/Video</span>
+            <span className="lg:hidden">Video</span>
+            <span className="hidden lg:inline">Photos/Video</span>
             <span>Notes</span>
           </div>
           <div className="my-1 h-px bg-[#004488]" />
@@ -319,7 +319,7 @@ function LoadCard({ load }: { load: Load | null }) {
             <p className="text-lg text-[#cccccc]">(no jumpers listed)</p>
           ) : (
             rows.map((row, i) => (
-              <div key={`${row.name}-${i}`} className={`grid ${LOAD_COLS} text-xl leading-8`}>
+              <div key={`${row.name}-${i}`} className={`grid ${LOAD_COLS} text-sm leading-6 lg:text-xl lg:leading-8`}>
                 <span className="truncate">{row.name}</span>
                 <span className="truncate text-[#cccccc]">{row.ti}</span>
                 <span className="text-[#cccccc]">{row.video}</span>
@@ -337,7 +337,7 @@ function ClockButton({ color, onClick, children }: { color: string; onClick: () 
   return (
     <button
       type="button"
-      className="rounded border border-[#0044aa] bg-[#002266] px-5 py-3 text-lg font-bold"
+      className="rounded border border-[#0044aa] bg-[#002266] px-3 py-2 text-base font-bold lg:px-5 lg:py-3 lg:text-lg"
       style={{ color }}
       onClick={onClick}
     >
