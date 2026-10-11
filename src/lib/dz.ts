@@ -53,6 +53,7 @@ export type Slot = {
   instructorName: string;
   jumpType: string;
   media: string;
+  note: string;
 };
 
 export type Load = {
@@ -442,9 +443,10 @@ export const loadDesk = createServerFn({ method: "GET" })
       instructor_name: unknown;
       jump_type: unknown;
       media: unknown;
+      note: unknown;
     }>(
       `select s.id, s.load_id, s.person_id, p.name as person_name, s.role,
-         s.instructor_id, coalesce(i.name, '') as instructor_name, s.jump_type, s.media
+         s.instructor_id, coalesce(i.name, '') as instructor_name, s.jump_type, s.media, s.note
        from slots s
        join people p on p.id = s.person_id
        left join people i on i.id = s.instructor_id
@@ -474,6 +476,7 @@ export const loadDesk = createServerFn({ method: "GET" })
           instructorName: s(slot.instructor_name),
           jumpType: s(slot.jump_type),
           media: s(slot.media),
+          note: s(slot.note),
         })),
     }));
     const bookings = (
@@ -625,7 +628,15 @@ export const setLoadStatus = createServerFn({ method: "POST" })
 export const addSlot = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator(
-    (input: { loadId: number; personId: number; role: string; instructorId?: number; jumpType?: string; media?: string }) => {
+    (input: {
+      loadId: number;
+      personId: number;
+      role: string;
+      instructorId?: number;
+      jumpType?: string;
+      media?: string;
+      note?: string;
+    }) => {
       const role = ["tandem", "fun_jumper", "instructor", "videographer"].includes(input.role) ? input.role : "tandem";
       const jumpType = ["regular", "beach", "sunset"].includes(input.jumpType ?? "") ? input.jumpType! : "";
       const media = ["none", "video", "photo"].includes(input.media ?? "") ? input.media! : "";
@@ -636,6 +647,7 @@ export const addSlot = createServerFn({ method: "POST" })
         instructorId: n(input.instructorId),
         jumpType,
         media,
+        note: (input.note ?? "").trim().slice(0, 80),
       };
     },
   )
@@ -733,8 +745,17 @@ export const addSlot = createServerFn({ method: "POST" })
       if (!canFinish(next)) throw new Error(seatRefusal(counts));
     }
     const rows = await sql<{ id: unknown }>`
-      insert into slots (load_id, person_id, role, instructor_id, jump_type, media, created_by)
-      values (${data.loadId}, ${data.personId}, ${data.role}, ${instructorId}, ${data.jumpType}, ${data.media}, ${context.userId})
+      insert into slots (load_id, person_id, role, instructor_id, jump_type, media, note, created_by)
+      values (
+        ${data.loadId},
+        ${data.personId},
+        ${data.role},
+        ${instructorId},
+        ${data.jumpType},
+        ${data.media},
+        ${data.role === "tandem" ? data.note : ""},
+        ${context.userId}
+      )
       returning id
     `;
     if (instructorId) {

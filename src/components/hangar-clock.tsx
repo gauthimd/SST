@@ -323,7 +323,7 @@ function LoadCard({ load }: { load: Load | null }) {
                 <span className="truncate">{row.name}</span>
                 <span className="truncate text-[#cccccc]">{row.ti}</span>
                 <span className="text-[#cccccc]">{row.video}</span>
-                <span className="truncate text-[#aaccff]">{row.notes}</span>
+                <span className="text-[#aaccff]">{row.notes}</span>
               </div>
             ))
           )}
@@ -394,7 +394,8 @@ function WindFetcher({
 function jumperRows(load: Load): JumperRow[] {
   return load.slots.flatMap((slot) => {
     if (slot.role === "tandem") {
-      const notes = slot.jumpType === "beach" ? "Beach" : slot.jumpType === "sunset" ? "Sunset" : "";
+      const kind = slot.jumpType === "beach" ? "Beach" : slot.jumpType === "sunset" ? "Sunset" : "";
+      const notes = [kind, slot.note.trim()].filter(Boolean).join(" · ");
       return [{ name: displayName(slot.personName), ti: displayName(slot.instructorName), video: mediaMark(slot.media), notes }];
     }
     if (slot.role === "fun_jumper") return [{ name: displayName(slot.personName), ti: "", video: "", notes: "FJ" }];
@@ -426,7 +427,7 @@ function fingerprint(loads: Load[]) {
     .map(
       (load) =>
         `${load.id}:${load.callTime}:${load.tailNumber}:${load.pilotName}:${load.altitudeFt}:${load.slots
-          .map((slot) => `${slot.id},${slot.personName},${slot.role},${slot.instructorName},${slot.media},${slot.jumpType}`)
+          .map((slot) => `${slot.id},${slot.personName},${slot.role},${slot.instructorName},${slot.media},${slot.jumpType},${slot.note}`)
           .join("|")}`,
     )
     .join("||");

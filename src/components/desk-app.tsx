@@ -479,6 +479,7 @@ function LoadCard({
   const [instructorId, setInstructorId] = useState("");
   const [jumpType, setJumpType] = useState("regular");
   const [media, setMedia] = useState("none");
+  const [slotNote, setSlotNote] = useState("");
   const [expanded, setExpanded] = useState(load.status !== "landed");
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -640,6 +641,7 @@ function LoadCard({
                 instructorId: Number(instructorId || 0),
                 jumpType: seatRole === "tandem" ? jumpType : "",
                 media: seatRole === "tandem" ? media : "",
+                note: seatRole === "tandem" ? slotNote.trim() : "",
               },
             }),
           );
@@ -678,6 +680,14 @@ function LoadCard({
               <option value="video">Video</option>
               <option value="photo">Photos and video</option>
             </select>
+            <input
+              className="field"
+              value={slotNote}
+              maxLength={80}
+              placeholder="Notes"
+              aria-label="Notes"
+              onChange={(e) => setSlotNote(e.target.value)}
+            />
           </>
         ) : null}
         <button className="btn w-fit" disabled={busy}>
@@ -741,7 +751,7 @@ function slotLabel(slot: Load["slots"][number]) {
   if (slot.role !== "tandem") return role;
   const jump = slot.jumpType === "beach" ? "beach" : slot.jumpType === "sunset" ? "sunset beach" : "regular";
   const media = slot.media === "photo" ? "photos & video" : slot.media === "video" ? "video" : "no media";
-  return `${jump} · ${media}${slot.instructorName ? ` · ${slot.instructorName}` : ""}`;
+  return `${jump} · ${media}${slot.instructorName ? ` · ${slot.instructorName}` : ""}${slot.note ? ` · ${slot.note}` : ""}`;
 }
 
 function countdown(takeoff: string) {
