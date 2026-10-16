@@ -195,6 +195,7 @@ export function HangarClock({ date }: { date: string }) {
 
   const shown = [0, 1, 2, 3].map((offset) => loads[index + offset] ?? null);
   const clock = chicagoClock(now);
+  const [clockTime, clockPeriod] = clock.split(" ");
   const counting = remain != null && remain > 0;
   const timeText = remain == null ? "00:00" : formatHms(Math.max(0, remain));
   const timeColor = !timerOn || remain == null ? "#ffffff" : remain <= 0 ? "#ff2222" : remain <= 60 ? "#ff4444" : "#ffffff";
@@ -202,13 +203,13 @@ export function HangarClock({ date }: { date: string }) {
   return (
     <div className="fixed inset-0 overflow-y-auto bg-[#003399] text-white lg:overflow-hidden" data-board="hangar">
       <div className="flex min-h-full flex-col lg:h-full lg:min-h-0">
-        <h1 className="shrink-0 px-3 py-2 text-center font-['Oswald',sans-serif] text-3xl tracking-wide text-[#00ff88] sm:text-4xl lg:py-[0.6vmin] lg:text-[clamp(1.5rem,4.2vmin,3.6rem)]">
+        <h1 className="shrink-0 px-3 py-1 text-center font-['Oswald',sans-serif] text-3xl tracking-wide whitespace-nowrap text-[#00ff88] sm:text-4xl lg:py-[0.4vmin] lg:text-[clamp(1.15rem,3.2vmin,2.75rem)]">
           SKYDIVE SOUTH TEXAS
         </h1>
-        <div className="flex flex-col gap-4 px-3 pb-8 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_minmax(0,1.15fr)] lg:grid-rows-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-0 lg:overflow-hidden lg:px-0 lg:pb-0">
-          <div className="hidden min-h-0 min-w-0 flex-col overflow-hidden px-3 pb-3 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:flex">
-            <img src="/clock/sstlogo.png" alt="Skydive South Texas" className="mx-auto h-auto max-h-[18vmin] w-auto max-w-full object-contain" />
-            <div className="mt-2 min-h-0 flex-1">
+        <div className="flex flex-col gap-4 px-3 pb-8 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)_minmax(0,1.15fr)] lg:grid-rows-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-0 lg:overflow-hidden lg:px-0 lg:pb-0">
+          <div className="hidden min-h-0 min-w-0 flex-col overflow-hidden px-3 pb-2 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:flex">
+            <img src="/clock/sstlogo.png" alt="Skydive South Texas" className="mx-auto h-auto max-h-[14vmin] w-auto max-w-full object-contain" />
+            <div className="mt-1 min-h-0 flex-1">
               <img
                 src="/clock/portasatview.png"
                 alt="Mustang Island from above"
@@ -217,17 +218,19 @@ export function HangarClock({ date }: { date: string }) {
             </div>
           </div>
 
-          <div className="@container flex min-h-0 min-w-0 flex-col items-center justify-center overflow-hidden px-1 text-center lg:col-start-2 lg:row-start-1 lg:h-full lg:px-3">
-              <p className="font-['Courier_New',monospace] text-4xl text-[#00ccff] sm:text-5xl lg:text-[clamp(1.6rem,14cqh,5.5rem)]">{clock}</p>
-              <p className="mt-3 text-2xl font-bold text-[#cccccc] lg:mt-[1cqh] lg:text-[clamp(1rem,7cqh,2.2rem)]">{current ? `Load ${current.loadNumber} Call` : "Load Call"}</p>
+          <div className="flex min-h-0 min-w-0 flex-col items-center justify-center overflow-hidden px-2 text-center lg:col-start-2 lg:row-start-1 lg:h-full lg:px-3">
+              <p className="font-['Courier_New',monospace] text-4xl whitespace-nowrap text-[#00ccff] sm:text-5xl lg:text-[clamp(1.35rem,4.6vmin,4.75rem)] lg:leading-none">
+                {clockTime} <span className="text-[0.42em]">{clockPeriod}</span>
+              </p>
+              <p className="mt-2 text-2xl font-bold whitespace-nowrap text-[#cccccc] lg:mt-[0.6vmin] lg:text-[clamp(0.95rem,2.4vmin,1.8rem)]">{current ? `Load ${current.loadNumber} Call` : "Load Call"}</p>
               {timerOn ? (
-                <p className="mt-2 font-['Courier_New',monospace] text-6xl leading-none font-bold tabular-nums sm:text-7xl lg:mt-[1cqh] lg:text-[clamp(2.6rem,30cqh,10rem)]" style={{ color: timeColor }}>
+                <p className="mt-1 font-['Courier_New',monospace] text-6xl leading-none font-bold whitespace-nowrap tabular-nums sm:text-7xl lg:text-[clamp(2.4rem,8vmin,7.25rem)]" style={{ color: timeColor }}>
                   {timeText}
                 </p>
               ) : null}
-              <p className="mt-2 min-h-8 text-2xl font-bold text-[#ff2222] lg:min-h-[1.2em] lg:text-[clamp(0.9rem,5cqh,1.7rem)]">{status}</p>
+              <p className="mt-1 min-h-8 text-2xl font-bold text-[#ff2222] lg:min-h-[1.1em] lg:text-[clamp(0.8rem,1.8vmin,1.35rem)]">{status}</p>
               {error ? <p className="mt-1 max-w-sm text-sm text-[#ff8888]">{error}</p> : null}
-              <div className="mt-2 flex max-w-full flex-wrap justify-center gap-2 lg:mt-[1cqh]">
+              <div className="mt-2 flex max-w-full flex-wrap justify-center gap-2 lg:grid lg:w-full lg:grid-cols-4 lg:gap-[0.6vmin]">
                 <ClockButton
                   color={timerOn ? "#00ff88" : "#ff8888"}
                   onClick={() => {
@@ -257,20 +260,20 @@ export function HangarClock({ date }: { date: string }) {
               {counting ? null : <p className="sr-only">Countdown {timeText}</p>}
           </div>
 
-          <div className="@container order-3 flex h-auto min-h-0 min-w-0 flex-col items-center overflow-hidden px-1 pb-2 lg:order-none lg:col-start-2 lg:row-start-2 lg:h-full lg:justify-center lg:px-3 lg:pb-3">
-              <p className="text-center text-lg font-bold text-[#00ccff] lg:text-[clamp(0.95rem,9cqh,1.7rem)]">WINDS & TEMP — PORT ARANSAS</p>
-              <p className="text-sm text-[#88aacc] lg:text-[clamp(0.75rem,5cqh,1rem)]">(arrows point downwind)</p>
-              <p className="mb-2 text-xs text-[#88aacc] lg:mb-[1cqh] lg:text-[clamp(0.7rem,4cqh,0.95rem)]">Last update: {updated}</p>
+          <div className="order-3 flex h-auto min-h-0 min-w-0 flex-col items-center overflow-hidden px-1 pb-2 lg:order-none lg:col-start-2 lg:row-start-2 lg:h-full lg:justify-center lg:px-3 lg:pb-2">
+              <p className="text-center text-lg font-bold text-[#00ccff] lg:text-[clamp(0.85rem,2vmin,1.45rem)]">WINDS & TEMP — PORT ARANSAS</p>
+              <p className="text-sm text-[#88aacc] lg:text-[clamp(0.7rem,1.3vmin,0.95rem)]">(arrows point downwind)</p>
+              <p className="mb-2 text-xs text-[#88aacc] lg:mb-[0.4vmin] lg:text-[clamp(0.65rem,1.2vmin,0.85rem)]">Last update: {updated}</p>
               {ALTS.map((alt) => (
-                <p key={alt} className="grid w-full max-w-xl grid-cols-[auto_minmax(0,1fr)] gap-x-3 font-['Courier_New',monospace] text-sm text-white sm:text-base lg:text-[clamp(0.85rem,8cqh,1.8rem)]">
+                <p key={alt} className="grid w-full max-w-xl grid-cols-[auto_minmax(0,1fr)] gap-x-3 font-['Courier_New',monospace] text-sm whitespace-nowrap text-white sm:text-base lg:text-[clamp(0.8rem,1.9vmin,1.45rem)]">
                   <span className="text-right text-[#cccccc]">{alt}:</span>
                   <span className="truncate">{winds[alt]}</span>
                 </p>
               ))}
-              <p className="mt-3 grid w-full max-w-xl grid-cols-[auto_minmax(0,1fr)] gap-x-3 font-['Courier_New',monospace] text-base lg:mt-[1.5cqh] lg:text-[clamp(0.9rem,8cqh,1.7rem)]">
+              <p className="mt-3 grid w-full max-w-xl grid-cols-[auto_minmax(0,1fr)] gap-x-3 font-['Courier_New',monospace] text-base whitespace-nowrap lg:mt-[0.8vmin] lg:text-[clamp(0.85rem,1.9vmin,1.4rem)]">
                 <span className="text-right text-[#cccccc]">Sunset today:</span> <span className="truncate text-[#00ff88]">{sunset}</span>
               </p>
-              <p className="mt-2 text-xs text-[#6688bb] lg:mt-[1cqh] lg:text-[clamp(0.7rem,4cqh,0.95rem)]">Data source: Open-Meteo</p>
+              <p className="mt-2 text-xs text-[#6688bb] lg:mt-[0.5vmin] lg:text-[clamp(0.65rem,1.2vmin,0.85rem)]">Data source: Open-Meteo</p>
           </div>
 
           <CardColumn loads={shown} />
@@ -300,7 +303,7 @@ function planeAltitude(pass: number) {
 
 function CardColumn({ loads }: { loads: Array<Load | null> }) {
   return (
-    <div className="@container order-2 flex min-w-0 flex-col justify-start gap-3 lg:order-none lg:col-start-3 lg:row-start-1 lg:row-span-2 lg:min-h-0 lg:gap-[1.2cqh] lg:overflow-auto lg:px-3 lg:py-2">
+    <div className="order-2 flex min-w-0 flex-col justify-start gap-3 lg:order-none lg:col-start-3 lg:row-start-1 lg:row-span-2 lg:min-h-0 lg:gap-2 lg:overflow-auto lg:px-3 lg:py-2">
       {loads.map((load, i) => (
         <LoadCard key={load?.id ?? `empty-${i}`} load={load} />
       ))}
@@ -316,14 +319,14 @@ function LoadCard({ load }: { load: Load | null }) {
         <p className="py-1 text-center text-xl text-[#cccccc]">— no load —</p>
       ) : (
         <>
-          <div className="flex flex-wrap items-baseline gap-x-3 text-base lg:text-[clamp(0.8rem,3.4cqh,1.25rem)]">
-            <p className="text-xl font-bold text-[#00ff88] lg:text-[clamp(0.95rem,4cqh,1.5rem)]">Load {load.loadNumber}</p>
+          <div className="flex flex-wrap items-baseline gap-x-3 text-base lg:text-[clamp(0.75rem,1.45vmin,1.1rem)]">
+            <p className="text-xl font-bold text-[#00ff88] lg:text-[clamp(0.9rem,1.7vmin,1.3rem)]">Load {load.loadNumber}</p>
             <p>Depart {load.callTime || "—"}</p>
             {load.tailNumber ? <p className="text-[#00ccff]">Tail: {load.tailNumber}</p> : null}
             {load.altitudeFt ? <p className="text-[#cccccc]">{load.altitudeFt.toLocaleString()} ft</p> : null}
             <p className="text-[#ffcc66]">Pilot: {load.pilotName ? displayName(load.pilotName) : "—"}</p>
           </div>
-          <div className={`mt-2 grid ${LOAD_COLS} text-xs font-bold text-[#88aacc] lg:text-[clamp(0.7rem,2.8cqh,1rem)]`}>
+          <div className={`mt-2 grid ${LOAD_COLS} text-xs font-bold text-[#88aacc] lg:text-[clamp(0.65rem,1.25vmin,0.9rem)]`}>
             <span>Skydiver</span>
             <span>TI</span>
             <span className="lg:hidden">Video</span>
@@ -335,7 +338,7 @@ function LoadCard({ load }: { load: Load | null }) {
             <p className="text-lg text-[#cccccc]">(no jumpers listed)</p>
           ) : (
             rows.map((row, i) => (
-              <div key={`${row.name}-${i}`} className={`grid ${LOAD_COLS} text-sm leading-6 lg:text-[clamp(0.8rem,3.6cqh,1.35rem)] lg:leading-snug`}>
+              <div key={`${row.name}-${i}`} className={`grid ${LOAD_COLS} text-sm leading-6 lg:text-[clamp(0.75rem,1.5vmin,1.15rem)] lg:leading-snug`}>
                 <span className="min-w-0 truncate">{row.name}</span>
                 <span className="min-w-0 truncate text-[#cccccc]">{row.ti}</span>
                 <span className="min-w-0 truncate text-[#cccccc]">{row.video}</span>
@@ -353,7 +356,7 @@ function ClockButton({ color, onClick, children }: { color: string; onClick: () 
   return (
     <button
       type="button"
-      className="rounded border border-[#0044aa] bg-[#002266] px-3 py-2 text-base font-bold lg:px-[0.9rem] lg:py-[0.45rem] lg:text-[clamp(0.75rem,4cqh,1.05rem)]"
+      className="rounded border border-[#0044aa] bg-[#002266] px-3 py-2 text-base font-bold whitespace-nowrap lg:px-1 lg:py-[clamp(0.4rem,1vmin,0.7rem)] lg:text-[clamp(0.72rem,1.45vmin,1rem)]"
       style={{ color }}
       onClick={onClick}
     >
