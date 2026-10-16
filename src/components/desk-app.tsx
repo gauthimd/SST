@@ -1048,7 +1048,9 @@ function AccountsPanel({
           ))}
         </div>
         {!accountNeedle ? (
-          <p className="text-sm text-muted">{desk.people.length} accounts. Type a name or phone to open one.</p>
+          selected ? null : (
+            <p className="text-sm text-muted">{desk.people.length} accounts. Type a name or phone to open one.</p>
+          )
         ) : shownAccounts.length === 0 ? (
           <p className="text-sm text-muted">No account matches.</p>
         ) : (
@@ -1062,6 +1064,7 @@ function AccountsPanel({
                     className="card flex w-full items-center justify-between gap-3 p-4 text-left"
                     onClick={() => {
                       setSelected(String(p.id));
+                      setAccountQuery("");
                       if (canFunJump(p)) setPersonId(String(p.id));
                     }}
                   >
@@ -1085,7 +1088,7 @@ function AccountsPanel({
           <p className="text-sm text-muted">Showing 20. Keep typing to narrow it down.</p>
         ) : null}
       </div>
-      {desk.people.find((p) => String(p.id) === selected) ? (
+      {!accountNeedle && desk.people.find((p) => String(p.id) === selected) ? (
         <ProfileEditor person={desk.people.find((p) => String(p.id) === selected)!} busy={busy} run={run} date={date} />
       ) : null}
       <form
