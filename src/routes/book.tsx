@@ -16,12 +16,10 @@ function BookPage() {
       />
       <div className="mx-auto max-w-3xl space-y-4 px-5 py-8">
         {PRODUCTS.map((product) => (
-          <article key={product.id} className="card flex flex-wrap items-end justify-between gap-3 p-5">
-            <div>
-              <h2 className="text-2xl">{product.label}</h2>
-              <p className="mt-1 text-muted">{product.blurb}</p>
-            </div>
-            <p className="font-display text-3xl text-sea">{money(product.cents)}</p>
+          <article key={product.id} className="card p-5">
+            <h2 className="text-2xl">{product.label}</h2>
+            <p className="mt-1 text-muted">{product.blurb}</p>
+            <p className="mt-3 font-display text-3xl text-sea">{money(product.cents)}</p>
           </article>
         ))}
         <section className="card p-5">
