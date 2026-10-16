@@ -213,7 +213,9 @@ function CustomerHome({
           <section className="card p-5">
             <p className="text-xs font-semibold tracking-[0.14em] text-sea uppercase">{kindLabel(me.person.kind)}</p>
             <h2 className="text-3xl">{me.person.name}</h2>
-            {me.person.kind === "fun_jumper" || canFunJump(me.person) ? (
+            {me.person.kind === "tandem" ? (
+              <p className="mt-2 font-display text-3xl text-sea">{money(me.person.depositCents)} on account</p>
+            ) : canFunJump(me.person) ? (
               <p className="mt-2 font-display text-3xl text-sea">{money(me.person.walletCents)} on account</p>
             ) : null}
             {me.person.kind === "fun_jumper" ? (
@@ -1279,6 +1281,11 @@ function ProfileEditor({
       }}
     >
       <h2 className="text-2xl">{person.name}</h2>
+      {person.kind === "tandem" ? (
+        <p className="font-display text-3xl text-sea">{money(person.depositCents)} on account</p>
+      ) : canFunJump(person) ? (
+        <p className="font-display text-3xl text-sea">{money(person.walletCents)} on account</p>
+      ) : null}
       {block ? <p className="text-sm text-coral">{block}</p> : null}
       <p className="text-sm text-muted">
         Waiver {waiverCurrent(form.waiverSignedOn, date) ? "signed this year" : "not signed this year"}.

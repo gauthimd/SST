@@ -16,6 +16,7 @@ export type Person = {
   phone: string;
   notes: string;
   walletCents: number;
+  depositCents: number;
   jumpCount: number;
   uspaLicense: string;
   uspaRatings: string;
@@ -210,6 +211,7 @@ function mapPerson(row: {
   phone: unknown;
   notes: unknown;
   wallet_cents: unknown;
+  deposit_cents: unknown;
   jump_count: unknown;
   uspa_license: unknown;
   uspa_ratings: unknown;
@@ -233,6 +235,7 @@ function mapPerson(row: {
     phone: s(row.phone),
     notes: s(row.notes),
     walletCents: n(row.wallet_cents),
+    depositCents: n(row.deposit_cents),
     jumpCount: n(row.jump_count),
     uspaLicense: s(row.uspa_license),
     uspaRatings: s(row.uspa_ratings),
@@ -258,6 +261,8 @@ const personSelect = `
     coalesce((select m.role from memberships m where m.user_id = p.linked_user_id), '') as desk_role,
     coalesce((select sum(amount_cents) from ledger l
       where l.person_id = p.id and l.kind in ('wallet_credit', 'wallet_debit')), 0) as wallet_cents,
+    coalesce((select sum(paid_cents) from bookings b
+      where b.person_id = p.id and b.status <> 'cancelled'), 0) as deposit_cents,
     (select count(*) from jump_log j where j.person_id = p.id) as jump_count
   from people p
 `;
